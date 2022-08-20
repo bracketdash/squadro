@@ -56,7 +56,7 @@ const move = ({
   player = 1,
   queue = [],
   resolve,
-  score = 0,
+  score = { value: 0 },
   state,
 }) => {
   const newState = [...state];
@@ -92,14 +92,28 @@ const move = ({
       }
     }
   });
-  score += currMoveScore * player * (1 / (ahead + 1));
+  score.value += currMoveScore * player * (1 / (ahead + 1));
   if (ahead < MAX_MOVES_AHEAD) {
-    // TODO: add the next moves ahead to the queue
+    const si = player === 1 ? 0 : 5;
+    Array(5).fill(true).forEach((_, i) => {
+      const piece = si + i;
+      if (newState[piece] !== 12) {
+        queue.push({
+          piece,
+          player: player === 1 ? -1 : 1,
+          queue,
+          resolve,
+          score,
+          state: newState,
+          ahead: ahead + 1,
+        });
+      }
+    });
   }
   if (!queue.length) {
     resolve(score);
   } else {
-    // TODO: start the next move in the queue
+    move(queue.pop());
   }
 };
 
