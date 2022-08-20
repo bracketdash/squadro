@@ -1,11 +1,17 @@
-const getArr = (len) => Array(len).fill(true);
+const MAX_MOVES_AHEAD = 2;
 
 const getMoveScores = ({ player, state }) => {
   const si = player === 1 ? 0 : 5;
-  Promise.all(getArr(5).map((_, i) => new Promise((resolve) => {
-    // TODO: handle situation where piece is already back home (can't move anymore)
-    move({ piece: si + i, resolve, state });
-  }))).then((values) => {
+  const options = [];
+  Array(5).fill(true).forEach((_, i) => {
+    const piece = si + i;
+    if (state[piece] !== 12) {
+      options.push(new Promise((resolve) => {
+        move({ piece, resolve, state });
+      }));
+    }
+  });
+  Promise.all(options).then((values) => {
     console.log(values);
   });
 };
@@ -55,28 +61,46 @@ const move = ({
 }) => {
   const newState = [...state];
   const speed = getSpeed({ piece, state });
+  let currMoveScore = 0;
   let jumped = 0;
-  getArr(speed).forEach(() => {
+  Array(speed).fill(true).forEach(() => {
     if (jumped || [6, 12].includes(newState[piece])) {
       return;
     }
     newState[piece]++;
-    score++;
+    currMoveScore++;
     const opponentPiece = getOpponentPiece({ piece, space: newState[piece] });
     if (isOpponentHere({ opponentPiece, piece, state })) {
       let jumping = true;
       while (jumping) {
         const currOpponentPiece = opponentPiece + jumped;
         const opponentPieceOldState = newState[currOpponentPiece];
-        newState[currOpponentPiece] = state[currOpponentPiece] < 6 ? 0 : 6;
-        score += opponentPieceOldState - newState[currOpponentPiece] + 1;
+        newState[currOpponentPiece] = newState[currOpponentPiece] < 6 ? 0 : 6;
+        currMoveScore += opponentPieceOldState - newState[currOpponentPiece] + 1;
         newState[piece]++;
         jumped++;
-        // TODO: check whether next space is also occupied (if not: `jumping = false;`)
+        if (
+          [6, 12].includes(newState[piece]) ||
+          !isOpponentHere({
+            opponentPiece: currOpponentPiece + 1,
+            piece,
+            state: newState
+          })
+        ) {
+          jumping = false;
+        }
       }
     }
   });
-  // TODO: set up next moves ahead
+  score += currMoveScore * player * (1 / (ahead + 1));
+  if (ahead < MAX_MOVES_AHEAD) {
+    // TODO: add the next moves ahead to the queue
+  }
+  if (!queue.length) {
+    resolve(score);
+  } else {
+    // TODO: start the next move in the queue
+  }
 };
 
 // example: new game, player 1
