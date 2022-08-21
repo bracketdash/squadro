@@ -28,11 +28,11 @@ const App = () => {
           player: uPlayer,
           state: uState.split(','),
         }).then((scores) => {
-          setUScores(scores.map((s) => s.value));
+          setUScores(scores);
         });
       }}>Get moves scores</button>
       <p>
-        <label>Moves scores:</label>
+        <label>Move scores:</label>
       </p>
       <pre>{uScores.join(' | ')}</pre>
     </div>

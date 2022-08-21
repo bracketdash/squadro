@@ -42,8 +42,9 @@ export const move = ({
       }
     }
   });
+  // TODO: deduct a bunch of points from this move if it would allow opponent to win on their next turn
   score.value += currMoveScore * player * (1 / (ahead + 1));
-  if (ahead < 0) { // max moves ahead
+  if (ahead < 4) { // max moves ahead
     const si = player === 1 ? 0 : 5;
     Array(5).fill(true).forEach((_, i) => {
       const piece = si + i;
@@ -61,7 +62,7 @@ export const move = ({
     });
   }
   if (!queue.length) {
-    resolve(score);
+    resolve(score.value.toFixed(3));
   } else {
     move(queue.pop());
   }
