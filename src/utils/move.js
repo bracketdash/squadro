@@ -43,6 +43,7 @@ export const move = ({
     }
   });
   // TODO: deduct a bunch of points from this move if it would allow opponent to win on their next turn
+  // TODO: add some points if this move leads to a win next turn
   score.value += currMoveScore * player * (1 / (ahead + 1));
   if (ahead < 4) { // max moves ahead
     const si = player === 1 ? 0 : 5;
