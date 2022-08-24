@@ -42,8 +42,24 @@ export const move = ({
       }
     }
   });
-  // TODO: deduct a bunch of points from this move if it would allow opponent to win on their next turn
-  // TODO: add some points if this move leads to a win next turn
+  if (
+    player === -1 && (
+      piece > 4 && () || // TODO: check state for win for left-side player
+      piece < 5 && () // TODO: check state for win for right-side player
+    )
+  ) {
+    // deduct points if it would allow opponent to win within max turns
+    score.value -= 80;
+  }
+  if (
+    player === 1 && (
+      piece < 5 && () || // TODO: check state for win for left-side player
+      piece > 4 && () // TODO: check state for win for right-side player
+    )
+  ) {
+    // add some points if this move leads to a win within max turns
+    score.value += 40;
+  }
   score.value += currMoveScore * player * (1 / (ahead + 1));
   if (ahead < 4) { // max moves ahead
     const si = player === 1 ? 0 : 5;
