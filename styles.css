@@ -1,0 +1,213 @@
+html,
+body {
+  background-color: #fff;
+  font-family: "Helvetica", "Arial", "Verdana", sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+.app-container {
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.header {
+  background-color: #369;
+  padding: 10px 0;
+}
+
+.header > h1 {
+  color: #fff;
+  font-size: 24px;
+  font-weight: 400;
+  margin: 0;
+  text-align: center;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 20px auto;
+  width: 352px;
+}
+
+.row {
+  display: flex;
+  gap: 2px;
+  height: 48px;
+}
+
+.row > div {
+  background-color: #ccc;
+  border-radius: 4px;
+  display: block;
+  float: left;
+  height: 48px;
+  position: relative;
+  width: 48px;
+}
+
+.row > .option {
+  cursor: pointer;
+}
+
+.row > .option:hover {
+  background-color: #eee;
+  outline: 1px solid #0005;
+}
+
+.row > .empty {
+  background-color: transparent;
+}
+
+.row > .vertical {
+  margin-left: 10px;
+  margin-right: 10px;
+  width: 28px;
+}
+
+.row > .horizontal {
+  height: 28px;
+  margin-bottom: 10px;
+  margin-top: 10px;
+}
+
+.row > .orange,
+.row > .lime {
+  cursor: pointer;
+}
+
+.row > .orange:hover:after {
+  background-color: #fa4;
+}
+
+.row > .lime:hover:after {
+  background-color: #9e3;
+}
+
+.row > .orange:after,
+.row > .lime:after {
+  border: 1px solid #0005;
+  content: "";
+  position: absolute;
+}
+
+.down.orange:after {
+  border-bottom-left-radius: 50%;
+  border-bottom-right-radius: 50%;
+}
+
+.up.orange:after {
+  border-top-left-radius: 50%;
+  border-top-right-radius: 50%;
+}
+
+.rightward.lime:after {
+  border-bottom-right-radius: 50%;
+  border-top-right-radius: 50%;
+}
+
+.leftward.lime:after {
+  border-bottom-left-radius: 50%;
+  border-top-left-radius: 50%;
+}
+
+.row > .orange:after {
+  background-color: #f93;
+  bottom: 2px;
+  left: 50%;
+  margin-left: -12px;
+  top: 2px;
+  width: 22px;
+}
+
+.row > .lime:after {
+  background-color: #8d2;
+  height: 22px;
+  left: 2px;
+  margin-top: -12px;
+  right: 2px;
+  top: 50%;
+}
+
+.row > .suggested {
+  background-color: #69b;
+}
+
+.row > .suggested:after {
+  border-color: #fff5;
+}
+
+.row > .orange.selected:after {
+  background-color: #e82;
+  border-width: 2px;
+  width: 20px;
+}
+
+.row > .lime.selected:after {
+  background-color: #7c1;
+  border-width: 2px;
+  height: 20px;
+}
+
+.pips-left,
+.pips-right,
+.pips-top,
+.pips-bottom {
+  position: absolute;
+}
+
+.top .pips-left,
+.top .pips-right {
+  top: 8px;
+}
+
+.bottom .pips-left,
+.bottom .pips-right {
+  bottom: 8px;
+}
+
+.left .pips-top,
+.left .pips-bottom {
+  left: 8px;
+}
+
+.right .pips-top,
+.right .pips-bottom {
+  right: 8px;
+}
+
+.pips-left {
+  left: -8px;
+}
+
+.pips-right {
+  right: -8px;
+}
+
+.pips-top {
+  top: -8px;
+}
+
+.pips-bottom {
+  bottom: -8px;
+}
+
+.left .pips-top .pip,
+.left .pips-bottom .pip {
+  float: left;
+}
+
+.right .pips-top .pip,
+.right .pips-bottom .pip {
+  float: right;
+}
+
+.pip {
+  background-color: #bbb;
+  border-radius: 3px;
+  height: 5px;
+  margin: 2px;
+  width: 5px;
+}
