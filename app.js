@@ -84,6 +84,16 @@ function solver() {
     }
   }
 
+  function getTurnaroundPipCount(p) {
+    if (p.type === "orange") {
+      const rowIndex = p.direction === "down" ? 6 : 0;
+      return rows[rowIndex].children[p.col].querySelectorAll(".pip").length;
+    } else {
+      const colIndex = p.direction === "rightward" ? 6 : 0;
+      return rows[p.row].children[colIndex].querySelectorAll(".pip").length;
+    }
+  }
+
   function simulate(board, allPieces, pieceToMove) {
     const boardCopy = board.map((row) => [...row]);
     const piecesCopy = allPieces.map((p) => ({ ...p }));
@@ -92,49 +102,78 @@ function solver() {
     let { row: r, col: c } = moving;
     boardCopy[r][c] = null;
 
-    for (let i = 0; i < moving.pips; i++) {
-      const nr = r + dr,
-        nc = c + dc;
+    let jumped = [];
+    let steps = 0;
+
+    while (steps < moving.pips) {
+      const nr = r + dr;
+      const nc = c + dc;
       if (nr < 0 || nr >= boardSize || nc < 0 || nc >= boardSize) break;
 
+      const approachingEdge =
+        (moving.type === "orange" &&
+          ((moving.direction === "down" && nr === 6) ||
+            (moving.direction === "up" && nr === 0))) ||
+        (moving.type === "lime" &&
+          ((moving.direction === "rightward" && nc === 6) ||
+            (moving.direction === "leftward" && nc === 0)));
+
+      if (approachingEdge) {
+        r = nr;
+        c = nc;
+        steps = moving.pips;
+        break;
+      }
+
       const target = boardCopy[nr][nc];
-      if (target) {
-        const jumpR = nr + dr,
-          jumpC = nc + dc;
-        if (
-          jumpR < 0 ||
-          jumpR >= boardSize ||
-          jumpC < 0 ||
-          jumpC >= boardSize ||
-          boardCopy[jumpR][jumpC]
-        ) {
-          return null;
-        }
-        r = jumpR;
-        c = jumpC;
-        boardCopy[r][c] = moving;
-        moving.row = r;
-        moving.col = c;
 
-        const bounceTarget = piecesCopy.find((p) => p.id === target.id);
-        const cp = checkpoint(bounceTarget);
-        boardCopy[nr][nc] = null;
-        if (!boardCopy[cp.row][cp.col]) {
-          bounceTarget.row = cp.row;
-          bounceTarget.col = cp.col;
-          boardCopy[cp.row][cp.col] = bounceTarget;
-        }
+      if (target && target.type !== moving.type) {
+        jumped.push(target);
+        r = nr;
+        c = nc;
+        steps++;
+        continue;
+      }
 
-        return { board: boardCopy, pieces: piecesCopy };
+      if (jumped.length > 0) {
+        r = nr;
+        c = nc;
+        steps = moving.pips;
+        break;
       }
 
       r = nr;
       c = nc;
+      steps++;
+    }
+
+    const atEdge =
+      (moving.type === "orange" && (r === 0 || r === 6)) ||
+      (moving.type === "lime" && (c === 0 || c === 6));
+
+    if (atEdge) {
+      if (moving.type === "orange") {
+        moving.direction = r === 6 ? "up" : "down";
+      } else {
+        moving.direction = c === 6 ? "leftward" : "rightward";
+      }
+      moving.pips = getTurnaroundPipCount(moving);
     }
 
     moving.row = r;
     moving.col = c;
     boardCopy[r][c] = moving;
+
+    for (const j of jumped) {
+      const target = piecesCopy.find((p) => p.id === j.id);
+      const { row: cpR, col: cpC } = checkpoint(target);
+      if (!boardCopy[cpR][cpC]) {
+        boardCopy[target.row][target.col] = null;
+        target.row = cpR;
+        target.col = cpC;
+        boardCopy[cpR][cpC] = target;
+      }
+    }
 
     return { board: boardCopy, pieces: piecesCopy };
   }
