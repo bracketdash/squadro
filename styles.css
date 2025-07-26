@@ -48,15 +48,6 @@ body {
   width: 48px;
 }
 
-.row > .option {
-  cursor: pointer;
-}
-
-.row > .option:hover {
-  background-color: #eee;
-  outline: 1px solid #0005;
-}
-
 .row > .empty {
   background-color: transparent;
 }
@@ -129,26 +120,6 @@ body {
   margin-top: -12px;
   right: 2px;
   top: 50%;
-}
-
-.row > .suggested {
-  background-color: #69b;
-}
-
-.row > .suggested:after {
-  border-color: #fff5;
-}
-
-.row > .orange.selected:after {
-  background-color: #e82;
-  border-width: 2px;
-  width: 20px;
-}
-
-.row > .lime.selected:after {
-  background-color: #7c1;
-  border-width: 2px;
-  height: 20px;
 }
 
 .pips-left,
