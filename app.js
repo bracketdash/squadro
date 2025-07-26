@@ -167,6 +167,40 @@ function updateDOMwithBoardState(board) {
   });
 }
 
+function getScore(board, playerColor) {
+  const getProgress = (r, c, piece) => {
+    if (piece === "v") return r;
+    if (piece === "^") return 6 + (6 - r);
+    if (piece === ">") return c;
+    if (piece === "<") return 6 + (6 - c);
+    return 0;
+  };
+
+  const getAdvances = (color) => {
+    const advances = [];
+    for (let r = 0; r < board.length; r++) {
+      for (let c = 0; c < board[r].length; c++) {
+        const cell = board[r][c];
+        if (
+          (color === "orange" && (cell === "v" || cell === "^")) ||
+          (color === "lime" && (cell === ">" || cell === "<"))
+        ) {
+          advances.push(getProgress(r, c, cell));
+        }
+      }
+    }
+    return advances
+      .sort((a, b) => b - a)
+      .slice(0, 4)
+      .reduce((a, b) => a + b, 0);
+  };
+
+  const myScore = getAdvances(playerColor);
+  const opponentColor = playerColor === "orange" ? "lime" : "orange";
+  const opponentScore = getAdvances(opponentColor);
+  return myScore - opponentScore;
+}
+
 function isAPiece(board, rowIndex, cellIndex) {
   return ["v", "^", ">", "<"].includes(board[rowIndex][cellIndex]);
 }
@@ -176,7 +210,14 @@ function handleClick(rowIndex, cellIndex) {
   if (!isAPiece(board, rowIndex, cellIndex)) {
     return;
   }
-  updateDOMwithBoardState(getNextBoardState(board, rowIndex, cellIndex));
+  const nextState = getNextBoardState(board, rowIndex, cellIndex);
+  updateDOMwithBoardState(nextState);
+  console.log(
+    `Orange: ${getScore(board, "orange")} -> ${getScore(nextState, "orange")}`
+  );
+  console.log(
+    `Lime: ${getScore(board, "lime")} -> ${getScore(nextState, "lime")}`
+  );
 }
 
 function handleMouseenter(rowIndex, cellIndex) {
