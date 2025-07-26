@@ -167,6 +167,81 @@ function updateDOMwithBoardState(board) {
   });
 }
 
+function getAllPossibleFutureStates(
+  board,
+  rowIndex,
+  cellIndex,
+  moves,
+  isPlayerTurn = true,
+  firstMoveDone = false
+) {
+  if (moves < 1) return [];
+
+  const results = [];
+
+  const currentPiece = board[rowIndex][cellIndex];
+  const isVerticalPlayer = currentPiece === "v" || currentPiece === "^";
+
+  if (!firstMoveDone) {
+    // First move must be the specified piece
+    const nextBoard = getNextBoardState(board, rowIndex, cellIndex);
+    if (moves === 1) {
+      results.push(nextBoard);
+    } else {
+      const nextStates = getAllPossibleFutureStates(
+        nextBoard,
+        rowIndex,
+        cellIndex,
+        moves - 1,
+        !isPlayerTurn,
+        true
+      );
+      results.push(...nextStates);
+    }
+  } else {
+    // All valid moves for current player
+    const playerPieces = [];
+
+    for (let r = 0; r < board.length; r++) {
+      for (let c = 0; c < board[r].length; c++) {
+        const cell = board[r][c];
+        if (
+          isPlayerTurn &&
+          ((isVerticalPlayer && (cell === "v" || cell === "^")) ||
+            (!isVerticalPlayer && (cell === ">" || cell === "<")))
+        ) {
+          playerPieces.push({ r, c });
+        } else if (
+          !isPlayerTurn &&
+          ((isVerticalPlayer && (cell === ">" || cell === "<")) ||
+            (!isVerticalPlayer && (cell === "v" || cell === "^")))
+        ) {
+          playerPieces.push({ r, c });
+        }
+      }
+    }
+
+    for (const { r, c } of playerPieces) {
+      const nextBoard = getNextBoardState(board, r, c);
+      if (moves === 1) {
+        results.push(nextBoard);
+      } else {
+        const nextStates = getAllPossibleFutureStates(
+          nextBoard,
+          rowIndex,
+          cellIndex,
+          moves - 1,
+          !isPlayerTurn,
+          true
+        );
+        results.push(...nextStates);
+      }
+    }
+  }
+
+  return results;
+}
+
 function getScore(board, playerColor) {
   const getProgress = (r, c, piece) => {
     if (piece === "v") return r;
@@ -218,6 +293,8 @@ function handleClick(rowIndex, cellIndex) {
   console.log(
     `Lime: ${getScore(board, "lime")} -> ${getScore(nextState, "lime")}`
   );
+  console.log("Resulting states after move(s):");
+  console.log(getAllPossibleFutureStates(board, rowIndex, cellIndex, 4));
 }
 
 function handleMouseenter(rowIndex, cellIndex) {
