@@ -122,6 +122,14 @@ body {
   top: 50%;
 }
 
+.row > .suggested {
+  background-color: #69b;
+}
+
+.row > .suggested:after {
+  border-color: #fff5;
+}
+
 .pips-left,
 .pips-right,
 .pips-top,

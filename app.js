@@ -183,7 +183,6 @@ function getAllPossibleFutureStates(
   const isVerticalPlayer = currentPiece === "v" || currentPiece === "^";
 
   if (!firstMoveDone) {
-    // First move must be the specified piece
     const nextBoard = getNextBoardState(board, rowIndex, cellIndex);
     if (moves === 1) {
       results.push(nextBoard);
@@ -199,7 +198,6 @@ function getAllPossibleFutureStates(
       results.push(...nextStates);
     }
   } else {
-    // All valid moves for current player
     const playerPieces = [];
 
     for (let r = 0; r < board.length; r++) {
@@ -276,6 +274,26 @@ function getScore(board, playerColor) {
   return myScore - opponentScore;
 }
 
+function getMoveScore(board, rowIndex, cellIndex) {
+  const piece = board[rowIndex][cellIndex];
+  if (!["v", "^", ">", "<"].includes(piece)) return 0;
+
+  const playerColor = piece === "v" || piece === "^" ? "orange" : "lime";
+
+  const futureStates = getAllPossibleFutureStates(
+    board,
+    rowIndex,
+    cellIndex,
+    5
+  );
+
+  const totalScore = futureStates.reduce((sum, state) => {
+    return sum + getScore(state, playerColor);
+  }, 0);
+
+  return totalScore;
+}
+
 function isAPiece(board, rowIndex, cellIndex) {
   return ["v", "^", ">", "<"].includes(board[rowIndex][cellIndex]);
 }
@@ -287,14 +305,36 @@ function handleClick(rowIndex, cellIndex) {
   }
   const nextState = getNextBoardState(board, rowIndex, cellIndex);
   updateDOMwithBoardState(nextState);
-  console.log(
-    `Orange: ${getScore(board, "orange")} -> ${getScore(nextState, "orange")}`
-  );
-  console.log(
-    `Lime: ${getScore(board, "lime")} -> ${getScore(nextState, "lime")}`
-  );
-  console.log("Resulting states after move(s):");
-  console.log(getAllPossibleFutureStates(board, rowIndex, cellIndex, 4));
+  document
+    .querySelectorAll(".suggested")
+    .forEach((el) => el.classList.remove("suggested"));
+
+  let bestOrange = { score: -Infinity, r: -1, c: -1 };
+  let bestLime = { score: -Infinity, r: -1, c: -1 };
+
+  for (let r = 0; r < nextState.length; r++) {
+    for (let c = 0; c < nextState[r].length; c++) {
+      const cell = nextState[r][c];
+      if (cell === "v" || cell === "^") {
+        const score = getMoveScore(nextState, r, c);
+        if (score > bestOrange.score) {
+          bestOrange = { score, r, c };
+        }
+      } else if (cell === ">" || cell === "<") {
+        const score = getMoveScore(nextState, r, c);
+        if (score > bestLime.score) {
+          bestLime = { score, r, c };
+        }
+      }
+    }
+  }
+
+  if (bestOrange.r !== -1 && bestOrange.c !== -1) {
+    rows[bestOrange.r].children[bestOrange.c].classList.add("suggested");
+  }
+  if (bestLime.r !== -1 && bestLime.c !== -1) {
+    rows[bestLime.r].children[bestLime.c].classList.add("suggested");
+  }
 }
 
 function handleMouseenter(rowIndex, cellIndex) {
@@ -302,17 +342,15 @@ function handleMouseenter(rowIndex, cellIndex) {
   if (!isAPiece(board, rowIndex, cellIndex)) {
     return;
   }
-  // TODO
-  // console.log(`handleMouseenter(${rowIndex}, ${cellIndex})`);
-}
-
-function handleMouseleave(rowIndex, cellIndex) {
-  const board = getCurrentBoardState();
-  if (!isAPiece(board, rowIndex, cellIndex)) {
-    return;
-  }
-  // TODO
-  // console.log(`handleMouseleave(${rowIndex}, ${cellIndex})`);
+  const piece = board[rowIndex][cellIndex];
+  const playerColor = piece === "v" || piece === "^" ? "Orange" : "Lime";
+  console.log(
+    `${playerColor} [${rowIndex},${cellIndex}] move score: ${getMoveScore(
+      board,
+      rowIndex,
+      cellIndex
+    )}`
+  );
 }
 
 rows.forEach((row, rowIndex) => {
@@ -321,9 +359,6 @@ rows.forEach((row, rowIndex) => {
     cell.addEventListener("click", () => handleClick(rowIndex, cellIndex));
     cell.addEventListener("mouseenter", () =>
       handleMouseenter(rowIndex, cellIndex)
-    );
-    cell.addEventListener("mouseleave", () =>
-      handleMouseleave(rowIndex, cellIndex)
     );
   });
 });
