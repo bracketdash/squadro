@@ -172,18 +172,21 @@ function getAllPossibleFutureStates(
   rowIndex,
   cellIndex,
   moves,
-  isPlayerTurn = true,
+  currentTurnColor = null,
   firstMoveDone = false
 ) {
   if (moves < 1) return [];
 
   const results = [];
 
-  const currentPiece = board[rowIndex][cellIndex];
-  const isVerticalPlayer = currentPiece === "v" || currentPiece === "^";
-
+  // On the first move, determine the player color from the selected piece
   if (!firstMoveDone) {
+    const currentPiece = board[rowIndex][cellIndex];
+    currentTurnColor =
+      currentPiece === "v" || currentPiece === "^" ? "orange" : "lime";
+
     const nextBoard = getNextBoardState(board, rowIndex, cellIndex);
+
     if (moves === 1) {
       results.push(nextBoard);
     } else {
@@ -192,48 +195,43 @@ function getAllPossibleFutureStates(
         rowIndex,
         cellIndex,
         moves - 1,
-        !isPlayerTurn,
+        currentTurnColor === "orange" ? "lime" : "orange",
         true
       );
       results.push(...nextStates);
     }
-  } else {
-    const playerPieces = [];
+    return results;
+  }
 
-    for (let r = 0; r < board.length; r++) {
-      for (let c = 0; c < board[r].length; c++) {
-        const cell = board[r][c];
-        if (
-          isPlayerTurn &&
-          ((isVerticalPlayer && (cell === "v" || cell === "^")) ||
-            (!isVerticalPlayer && (cell === ">" || cell === "<")))
-        ) {
-          playerPieces.push({ r, c });
-        } else if (
-          !isPlayerTurn &&
-          ((isVerticalPlayer && (cell === ">" || cell === "<")) ||
-            (!isVerticalPlayer && (cell === "v" || cell === "^")))
-        ) {
-          playerPieces.push({ r, c });
-        }
+  // After the first move, use currentTurnColor to get all pieces for that player
+  const playerPieces = [];
+  for (let r = 0; r < board.length; r++) {
+    for (let c = 0; c < board[r].length; c++) {
+      const cell = board[r][c];
+      if (
+        (currentTurnColor === "orange" && (cell === "v" || cell === "^")) ||
+        (currentTurnColor === "lime" && (cell === ">" || cell === "<"))
+      ) {
+        playerPieces.push({ r, c });
       }
     }
+  }
 
-    for (const { r, c } of playerPieces) {
-      const nextBoard = getNextBoardState(board, r, c);
-      if (moves === 1) {
-        results.push(nextBoard);
-      } else {
-        const nextStates = getAllPossibleFutureStates(
-          nextBoard,
-          rowIndex,
-          cellIndex,
-          moves - 1,
-          !isPlayerTurn,
-          true
-        );
-        results.push(...nextStates);
-      }
+  // Simulate each possible move for the current player
+  for (const { r, c } of playerPieces) {
+    const nextBoard = getNextBoardState(board, r, c);
+    if (moves === 1) {
+      results.push(nextBoard);
+    } else {
+      const nextStates = getAllPossibleFutureStates(
+        nextBoard,
+        rowIndex,
+        cellIndex,
+        moves - 1,
+        currentTurnColor === "orange" ? "lime" : "orange",
+        true
+      );
+      results.push(...nextStates);
     }
   }
 
@@ -284,7 +282,7 @@ function getMoveScore(board, rowIndex, cellIndex) {
     board,
     rowIndex,
     cellIndex,
-    5
+    4
   );
 
   const totalScore = futureStates.reduce((sum, state) => {
