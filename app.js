@@ -179,8 +179,12 @@ function hasGameEnded(board) {
   for (let r = 0; r < board.length; r++) {
     for (let c = 0; c < board[r].length; c++) {
       const cell = board[r][c];
-      if (cell === "^" && r === 0) orangeHome++;
-      if (cell === "<" && c === 0) limeHome++;
+      if (cell === "^" && r === 0) {
+        orangeHome++;
+      }
+      if (cell === "<" && c === 0) {
+        limeHome++;
+      }
     }
   }
 
@@ -336,6 +340,9 @@ function handleClick(rowIndex, cellIndex) {
   for (let r = 0; r < nextState.length; r++) {
     for (let c = 0; c < nextState[r].length; c++) {
       const cell = nextState[r][c];
+      if ((cell === "^" && r === 0) || (cell === "<" && c === 0)) {
+        continue;
+      }
       if (cell === "v" || cell === "^") {
         const score = getMoveScore(nextState, r, c);
         if (score > bestOrange.score) {
