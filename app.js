@@ -1,3 +1,8 @@
+// adjust down if your machine halts and catches fire
+// 7 seems good for the average modern PC (as of 2025)
+// this can be increased as better hardware comes out for even better suggestions
+const SEARCH_DEPTH = 7;
+
 const rows = Array.from(document.querySelectorAll(".row"));
 
 function getCurrentBoardState() {
@@ -167,6 +172,21 @@ function updateDOMwithBoardState(board) {
   });
 }
 
+function hasGameEnded(board) {
+  let orangeHome = 0;
+  let limeHome = 0;
+
+  for (let r = 0; r < board.length; r++) {
+    for (let c = 0; c < board[r].length; c++) {
+      const cell = board[r][c];
+      if (cell === "^" && r === 0) orangeHome++;
+      if (cell === "<" && c === 0) limeHome++;
+    }
+  }
+
+  return orangeHome >= 4 || limeHome >= 4;
+}
+
 function getAllPossibleFutureStates(
   board,
   rowIndex,
@@ -179,7 +199,6 @@ function getAllPossibleFutureStates(
 
   const results = [];
 
-  // On the first move, determine the player color from the selected piece
   if (!firstMoveDone) {
     const currentPiece = board[rowIndex][cellIndex];
     currentTurnColor =
@@ -187,8 +206,11 @@ function getAllPossibleFutureStates(
 
     const nextBoard = getNextBoardState(board, rowIndex, cellIndex);
 
-    if (moves === 1) {
-      results.push(nextBoard);
+    if (moves === 1 || hasGameEnded(nextBoard)) {
+      const multiplier = Math.pow(5, moves - 1);
+      for (let i = 0; i < Math.max(1, multiplier); i++) {
+        results.push(nextBoard);
+      }
     } else {
       const nextStates = getAllPossibleFutureStates(
         nextBoard,
@@ -203,7 +225,6 @@ function getAllPossibleFutureStates(
     return results;
   }
 
-  // After the first move, use currentTurnColor to get all pieces for that player
   const playerPieces = [];
   for (let r = 0; r < board.length; r++) {
     for (let c = 0; c < board[r].length; c++) {
@@ -217,11 +238,13 @@ function getAllPossibleFutureStates(
     }
   }
 
-  // Simulate each possible move for the current player
   for (const { r, c } of playerPieces) {
     const nextBoard = getNextBoardState(board, r, c);
-    if (moves === 1) {
-      results.push(nextBoard);
+    if (moves === 1 || hasGameEnded(nextBoard)) {
+      const multiplier = Math.pow(5, moves - 1);
+      for (let i = 0; i < Math.max(1, multiplier); i++) {
+        results.push(nextBoard);
+      }
     } else {
       const nextStates = getAllPossibleFutureStates(
         nextBoard,
@@ -282,7 +305,7 @@ function getMoveScore(board, rowIndex, cellIndex) {
     board,
     rowIndex,
     cellIndex,
-    4
+    SEARCH_DEPTH
   );
 
   const totalScore = futureStates.reduce((sum, state) => {
