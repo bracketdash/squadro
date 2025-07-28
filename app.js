@@ -2,6 +2,9 @@ const rows = Array.from(document.querySelectorAll(".row"));
 const thinkingIndicator = document.querySelector(".thinking-indicator");
 const movesAheadDepth = document.querySelector(".depth");
 
+const verticalPips = [1, 3, 2, 3, 1];
+const horizontalPips = [3, 1, 2, 1, 3];
+
 let movesAhead = 9;
 
 function getFallbackCell(row, col) {
@@ -32,8 +35,6 @@ function getNextBoard(board, rowIndex, cellIndex) {
   ) {
     return board;
   }
-  const verticalPips = [1, 3, 2, 3, 1];
-  const horizontalPips = [3, 1, 2, 1, 3];
   const homewardPipMap = [null, 3, 2, 1];
   const isVertical = piece === "v" || piece === "^";
   const index = isVertical ? cellIndex - 1 : rowIndex - 1;
@@ -192,17 +193,65 @@ function getFutureBoards(startBoard, ri, ci, moves, color, first = true) {
 }
 
 function getProgress(piece, r, c) {
-  // TODO: fix this - it should be counting moves not spaces
-  switch (piece) {
-    case "v":
-      return r;
-    case "^":
-      return 6 + (6 - r);
-    case ">":
-      return c;
-    case "<":
-      return 6 + (6 - c);
+  const verticalPips = [1, 3, 2, 3, 1];
+  const horizontalPips = [3, 1, 2, 1, 3];
+  let pip;
+  let distance;
+  if (piece === "v" || piece === "^") {
+    const index = c - 1;
+    pip = verticalPips[index];
+    if (piece === "v") {
+      distance = r;
+      if (pip === 1) {
+        return Math.floor(distance / pip);
+      }
+      if (pip === 2) {
+        return Math.floor(distance / pip);
+      }
+      if (pip === 3) {
+        return Math.floor(distance / pip);
+      }
+    } else {
+      distance = 6 - r;
+      if (pip === 1) {
+        return 6 + Math.floor(distance / 3);
+      }
+      if (pip === 2) {
+        return 3 + Math.floor(distance / 2);
+      }
+      if (pip === 3) {
+        return 2 + Math.floor(distance / 1);
+      }
+    }
   }
+  if (piece === ">" || piece === "<") {
+    const index = r - 1;
+    pip = horizontalPips[index];
+    if (piece === ">") {
+      distance = c;
+      if (pip === 1) {
+        return Math.floor(distance / pip);
+      }
+      if (pip === 2) {
+        return Math.floor(distance / pip);
+      }
+      if (pip === 3) {
+        return Math.floor(distance / pip);
+      }
+    } else {
+      distance = 6 - c;
+      if (pip === 1) {
+        return 6 + Math.floor(distance / 3);
+      }
+      if (pip === 2) {
+        return 3 + Math.floor(distance / 2);
+      }
+      if (pip === 3) {
+        return 2 + Math.floor(distance / 1);
+      }
+    }
+  }
+  return 0;
 }
 
 function getAdvances(board, color) {
@@ -227,9 +276,6 @@ function getAdvances(board, color) {
 function getMoveScore(board, r, c) {
   const playerColor = getPieceColor(board[r][c]);
   const futureBoards = getFutureBoards(board, r, c, movesAhead);
-  console.log(
-    `r,c: ${r},${c}, movesAhead: ${movesAhead}, futureBoards.length: ${futureBoards.length}`
-  );
   return futureBoards.reduce((sum, board) => {
     const myScore = getAdvances(board, playerColor);
     const opponentColor = getOppositeColor(playerColor);
