@@ -1,9 +1,8 @@
-// adjust down if your machine halts and catches fire
-// 7 seems good for the average modern PC (as of 2025)
-// this can be increased as better hardware comes out for even better suggestions
-const DEPTH = 7;
-
 const rows = Array.from(document.querySelectorAll(".row"));
+const thinkingIndicator = document.querySelector(".thinking-indicator");
+const movesAheadDepth = document.querySelector(".depth");
+
+let movesAhead = 9;
 
 function getFallbackCell(row, col) {
   if ((row === 0 || row === 6) && col >= 1 && col <= 5) {
@@ -135,68 +134,65 @@ function getOppositeColor(color) {
   return color === "orange" ? "lime" : "orange";
 }
 
-function getFutureBoards(board, ri, ci, moves, color, first = true) {
-  if (moves < 1) {
-    return [];
-  }
+function getFutureBoards(startBoard, ri, ci, moves, color, first = true) {
   const results = [];
-  if (first) {
-    const currentPiece = board[ri][ci];
-    const nextBoard = getNextBoard(board, ri, ci);
-    color = getPieceColor(currentPiece);
-    if (moves === 1 || hasGameEnded(nextBoard)) {
-      const multiplier = Math.pow(5, moves - 1);
-      for (let i = 0; i < Math.max(1, multiplier); i++) {
-        results.push(nextBoard);
-      }
+  const stack = [
+    {
+      board: startBoard,
+      ri,
+      ci,
+      moves,
+      color,
+      first,
+    },
+  ];
+  while (stack.length > 0) {
+    let { board, ri, ci, moves, color, first } = stack.pop();
+    if (moves < 1) {
+      continue;
+    }
+    const pieces = [];
+    if (first) {
+      const pieceColor = getPieceColor(board[ri][ci]);
+      pieces.push({ r: ri, c: ci });
+      color = pieceColor;
     } else {
-      const nextBoards = getFutureBoards(
-        nextBoard,
-        ri,
-        ci,
-        moves - 1,
-        getOppositeColor(color),
-        false
-      );
-      results.push(...nextBoards);
+      for (let r = 0; r < board.length; r++) {
+        for (let c = 0; c < board[r].length; c++) {
+          const cell = board[r][c];
+          if (
+            (color === "orange" && (cell === "v" || cell === "^")) ||
+            (color === "lime" && (cell === ">" || cell === "<"))
+          ) {
+            pieces.push({ r, c });
+          }
+        }
+      }
     }
-    return results;
-  }
-  const pieces = [];
-  for (let r = 0; r < board.length; r++) {
-    for (let c = 0; c < board[r].length; c++) {
-      const cell = board[r][c];
-      if (
-        (color === "orange" && (cell === "v" || cell === "^")) ||
-        (color === "lime" && (cell === ">" || cell === "<"))
-      ) {
-        pieces.push({ r, c });
+    for (const { r, c } of pieces) {
+      const nextBoard = getNextBoard(board, r, c);
+      if (moves === 1 || hasGameEnded(nextBoard)) {
+        const multiplier = Math.pow(5, moves - 1);
+        for (let i = 0; i < multiplier; i++) {
+          results.push(nextBoard);
+        }
+      } else {
+        stack.push({
+          board: nextBoard,
+          ri,
+          ci,
+          moves: moves - 1,
+          color: getOppositeColor(color),
+          first: false,
+        });
       }
     }
   }
-  pieces.forEach(({ r, c }) => {
-    const nextBoard = getNextBoard(board, r, c);
-    if (moves === 1 || hasGameEnded(nextBoard)) {
-      const multiplier = Math.pow(5, moves - 1);
-      for (let i = 0; i < Math.max(1, multiplier); i++) {
-        results.push(nextBoard);
-      }
-    } else {
-      const nextBoards = getFutureBoards(
-        nextBoard,
-        ri,
-        ci,
-        moves - 1,
-        getOppositeColor(color),
-        false
-      );
-      results.push(...nextBoards);
-    }
-  });
   return results;
 }
 
 function getProgress(piece, r, c) {
+  // TODO: fix this - it should be counting moves not spaces
   switch (piece) {
     case "v":
       return r;
@@ -230,7 +226,10 @@ function getAdvances(board, color) {
 
 function getMoveScore(board, r, c) {
   const playerColor = getPieceColor(board[r][c]);
-  const futureBoards = getFutureBoards(board, r, c, DEPTH);
+  const futureBoards = getFutureBoards(board, r, c, movesAhead);
+  console.log(
+    `r,c: ${r},${c}, movesAhead: ${movesAhead}, futureBoards.length: ${futureBoards.length}`
+  );
   return futureBoards.reduce((sum, board) => {
     const myScore = getAdvances(board, playerColor);
     const opponentColor = getOppositeColor(playerColor);
@@ -263,7 +262,7 @@ function handleClick(rowIndex, cellIndex) {
       }
     });
   });
-  if (!isPiece(board[rowIndex][cellIndex])) {
+  if (!isPiece(board[rowIndex][cellIndex]) || hasGameEnded(board)) {
     return;
   }
   const nextBoard = getNextBoard(board, rowIndex, cellIndex);
@@ -292,26 +291,36 @@ function handleClick(rowIndex, cellIndex) {
         default:
           break;
       }
-      if (
-        isPiece(cell) &&
-        (cell !== "^" || r !== 0) &&
-        (cell !== "<" || c !== 0)
-      ) {
-        const score = getMoveScore(nextBoard, r, c);
-        domCell.setAttribute("data-score", score);
-        if (getPieceColor(cell) === "orange" && score > bestOrange.score) {
-          bestOrange = { score, r, c };
-        } else if (getPieceColor(cell) === "lime" && score > bestLime.score) {
-          bestLime = { score, r, c };
-        }
-      }
     });
   });
   document
     .querySelectorAll(".suggested")
     .forEach((el) => el.classList.remove("suggested"));
-  rows[bestOrange.r].children[bestOrange.c].classList.add("suggested");
-  rows[bestLime.r].children[bestLime.c].classList.add("suggested");
+  thinkingIndicator.classList.add("active");
+  setTimeout(() => {
+    nextBoard.forEach((row, r) => {
+      const domCells = Array.from(rows[r].children);
+      row.forEach((cell, c) => {
+        const domCell = domCells[c];
+        if (
+          isPiece(cell) &&
+          (cell !== "^" || r !== 0) &&
+          (cell !== "<" || c !== 0)
+        ) {
+          const score = getMoveScore(nextBoard, r, c);
+          domCell.setAttribute("data-score", score);
+          if (getPieceColor(cell) === "orange" && score > bestOrange.score) {
+            bestOrange = { score, r, c };
+          } else if (getPieceColor(cell) === "lime" && score > bestLime.score) {
+            bestLime = { score, r, c };
+          }
+        }
+      });
+    });
+    rows[bestOrange.r].children[bestOrange.c].classList.add("suggested");
+    rows[bestLime.r].children[bestLime.c].classList.add("suggested");
+    thinkingIndicator.classList.remove("active");
+  });
 }
 
 rows.forEach((row, rowIndex) => {
@@ -319,3 +328,17 @@ rows.forEach((row, rowIndex) => {
     cell.addEventListener("click", () => handleClick(rowIndex, cellIndex));
   });
 });
+
+document.querySelector(".number-control .up").addEventListener("click", () => {
+  movesAhead++;
+  movesAheadDepth.innerHTML = movesAhead;
+});
+
+document
+  .querySelector(".number-control .down")
+  .addEventListener("click", () => {
+    if (movesAhead > 1) {
+      movesAhead--;
+      movesAheadDepth.innerHTML = movesAhead;
+    }
+  });
