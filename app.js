@@ -1,10 +1,15 @@
-const game = new SquadroGame();
-
 const rows = Array.from(document.querySelectorAll(".row"));
-const thinkingIndicator = document.querySelector(".thinking-indicator");
 
-let movesAhead = 8;
+const game = new SquadroGame(getBoard());
 
+const minnie = new MinnieMax({
+  applyMove: game.applyMove,
+  depth: 8,
+  evaluate: game.evaluate,
+  generateMoves: game.generateMoves,
+});
+
+// TODO: move to minnie
 function getFutureBoards(startBoard, ri, ci, moves, color, first = true) {
   const results = [];
   const stack = [
@@ -62,13 +67,14 @@ function getFutureBoards(startBoard, ri, ci, moves, color, first = true) {
   return results;
 }
 
+// TODO: move to minnie
 function getMoveScore(board, r, c) {
   const playerColor = game.getPieceColor(board[r][c]);
-  const futureBoards = getFutureBoards(board, r, c, movesAhead);
+  const futureBoards = getFutureBoards(board, r, c, minnie.getDepth());
   return futureBoards.reduce((sum, board) => {
-    const myScore = game.getAdvances(board, playerColor);
+    const myScore = game.evaluate(board, playerColor);
     const opponentColor = game.getOppositeColor(playerColor);
-    const opponentScore = game.getAdvances(board, opponentColor);
+    const opponentScore = game.evaluate(board, opponentColor);
     return sum + myScore - opponentScore;
   }, 0);
 }
@@ -99,6 +105,9 @@ function getBoard() {
   });
 }
 
+const thinkingIndicator = document.querySelector(".thinking-indicator");
+
+// TODO: move (partially) to minnie
 function applySuggestions(board) {
   document
     .querySelectorAll(".suggested")
@@ -106,6 +115,7 @@ function applySuggestions(board) {
   thinkingIndicator.classList.add("active");
   requestAnimationFrame(() => {
     setTimeout(() => {
+      // TODO: just grab the scored moves for each player here, then figure out bestOrange and bestLime from there
       let bestOrange = { score: -Infinity, r: -1, c: -1 };
       let bestLime = { score: -Infinity, r: -1, c: -1 };
       board.forEach((row, r) => {
@@ -133,6 +143,7 @@ function applySuggestions(board) {
           }
         });
       });
+
       rows[bestOrange.r].children[bestOrange.c].classList.add("suggested");
       rows[bestLime.r].children[bestLime.c].classList.add("suggested");
       thinkingIndicator.classList.remove("active");
@@ -190,9 +201,10 @@ const movesAheadDepth = document.querySelector(".depth");
 const undoButton = document.querySelector(".undo");
 
 function handleDepthChange(delta) {
-  if (delta > 0 || movesAhead > 1) {
-    movesAhead = movesAhead + delta;
-    movesAheadDepth.innerHTML = movesAhead;
+  const currDepth = minnie.getDepth();
+  const newDepth = minnie.setDepth(currDepth + delta);
+  if (currDepth !== newDepth) {
+    movesAheadDepth.innerHTML = newDepth;
     applySuggestions(getBoard());
   }
 }
@@ -211,4 +223,4 @@ undoButton.addEventListener("click", () => {
   applySuggestions(board);
 });
 
-movesAheadDepth.innerHTML = movesAhead;
+movesAheadDepth.innerHTML = minnie.getDepth();

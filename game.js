@@ -1,18 +1,8 @@
 class SquadroGame {
-  constructor() {
+  constructor(initialState) {
     this.verticalPips = [1, 3, 2, 3, 1];
     this.horizontalPips = [3, 1, 2, 1, 3];
-    this.history = [
-      [
-        [" ", "v", "v", "v", "v", "v", " "],
-        [">", "+", "+", "+", "+", "+", "-"],
-        [">", "+", "+", "+", "+", "+", "-"],
-        [">", "+", "+", "+", "+", "+", "-"],
-        [">", "+", "+", "+", "+", "+", "-"],
-        [">", "+", "+", "+", "+", "+", "-"],
-        [" ", "|", "|", "|", "|", "|", " "],
-      ],
-    ];
+    this.history = [initialState];
   }
 
   undoMove() {
@@ -34,9 +24,7 @@ class SquadroGame {
     }
     if (
       (piece === "^" && rowIndex === 0) ||
-      (piece === "v" && rowIndex === 6) ||
-      (piece === "<" && cellIndex === 0) ||
-      (piece === ">" && cellIndex === 6)
+      (piece === "<" && cellIndex === 0)
     ) {
       return board;
     }
@@ -142,7 +130,7 @@ class SquadroGame {
     return color === "orange" ? "lime" : "orange";
   }
 
-  getAdvances(board, color) {
+  evaluate(board, color) {
     const advances = [];
     for (let r = 0; r < board.length; r++) {
       for (let c = 0; c < board[r].length; c++) {
@@ -159,6 +147,10 @@ class SquadroGame {
       .sort((a, b) => b - a)
       .slice(0, 4)
       .reduce((a, b) => a + b, 0);
+  }
+
+  generateMoves(board, color) {
+    // TODO
   }
 
   _getFallbackCell(row, col) {
