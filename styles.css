@@ -191,11 +191,62 @@ body {
   width: 5px;
 }
 
+.depth-gauge {
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+  justify-content: center;
+  margin: 24px auto;
+  user-select: none;
+  font-size: 18px;
+}
+
+.number-control {
+  align-items: center;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  display: flex;
+  flex-direction: column;
+  font-family: sans-serif;
+  overflow: hidden;
+  user-select: none;
+}
+
+.number-control .up,
+.number-control .down {
+  background: #e5e5e5;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  text-align: center;
+  width: 100%;
+}
+
+.number-control .up:hover,
+.number-control .down:hover {
+  background: #f0f0f0;
+}
+
+.number-control .up:active,
+.number-control .down:active {
+  background: #ddd;
+}
+
+.number-control .depth {
+  padding: 5px;
+  font-size: 24px;
+  font-weight: bold;
+  background: white;
+  width: 100%;
+  text-align: center;
+}
+
 .thinking-indicator {
   background: #999;
   border-radius: 50%;
   height: 42px;
-  margin: 20px auto;
   opacity: 0.5;
   overflow: hidden;
   position: relative;
@@ -263,51 +314,22 @@ body {
   }
 }
 
-.depth-gauge {
-  align-items: center;
-  display: flex;
-  flex-direction: row;
-  gap: 10px;
-  justify-content: center;
-}
-
-.number-control {
-  align-items: center;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-  display: flex;
-  flex-direction: column;
-  font-family: sans-serif;
-  overflow: hidden;
-  user-select: none;
-}
-
-.number-control .up,
-.number-control .down {
+.undo {
   background: #e5e5e5;
-  padding: 6px 12px;
+  border-radius: 50%;
+  border: 1px solid #bbb;
   cursor: pointer;
-  font-size: 16px;
-  line-height: 1;
+  font-size: 20px;
+  height: 31px;
+  line-height: 32px;
   text-align: center;
-  width: 100%;
+  width: 31px;
 }
 
-.number-control .up:hover,
-.number-control .down:hover {
+.undo:hover {
   background: #f0f0f0;
 }
 
-.number-control .up:active,
-.number-control .down:active {
+.undo:active {
   background: #ddd;
-}
-
-.number-control .depth {
-  padding: 8px 12px;
-  font-size: 24px;
-  font-weight: bold;
-  background: white;
-  width: 100%;
-  text-align: center;
 }

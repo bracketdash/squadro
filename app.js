@@ -5,6 +5,7 @@ const verticalPips = [1, 3, 2, 3, 1];
 const horizontalPips = [3, 1, 2, 1, 3];
 
 let movesAhead = 8;
+let history = [getBoard()];
 
 function getFallbackCell(row, col) {
   if ((row === 0 || row === 6) && col >= 1 && col <= 5) {
@@ -347,13 +348,8 @@ function applySuggestions(board) {
   });
 }
 
-function handleClick(rowIndex, cellIndex) {
-  const board = getBoard();
-  if (!isPiece(board[rowIndex][cellIndex]) || hasGameEnded(board)) {
-    return;
-  }
-  const nextBoard = getNextBoard(board, rowIndex, cellIndex);
-  nextBoard.forEach((row, r) => {
+function updateBoard(board) {
+  board.forEach((row, r) => {
     const domCells = Array.from(rows[r].children);
     row.forEach((cell, c) => {
       const domCell = domCells[c];
@@ -378,6 +374,16 @@ function handleClick(rowIndex, cellIndex) {
       }
     });
   });
+}
+
+function handleClick(rowIndex, cellIndex) {
+  const board = getBoard();
+  if (!isPiece(board[rowIndex][cellIndex]) || hasGameEnded(board)) {
+    return;
+  }
+  const nextBoard = getNextBoard(board, rowIndex, cellIndex);
+  history.push(nextBoard);
+  updateBoard(nextBoard);
   applySuggestions(nextBoard);
 }
 
@@ -390,6 +396,7 @@ rows.forEach((row, rowIndex) => {
 const upButton = document.querySelector(".number-control .up");
 const downButton = document.querySelector(".number-control .down");
 const movesAheadDepth = document.querySelector(".depth");
+const undoButton = document.querySelector(".undo");
 
 function handleDepthChange(delta) {
   if (delta > 0 || movesAhead > 1) {
@@ -405,4 +412,14 @@ upButton.addEventListener("click", () => {
 
 downButton.addEventListener("click", () => {
   handleDepthChange(-1);
+});
+
+undoButton.addEventListener("click", () => {
+  if (history.length === 1) {
+    return;
+  }
+  history.pop();
+  const board = history[history.length - 1];
+  updateBoard(board);
+  applySuggestions(board);
 });
