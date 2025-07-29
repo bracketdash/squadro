@@ -1,11 +1,10 @@
 const rows = Array.from(document.querySelectorAll(".row"));
 const thinkingIndicator = document.querySelector(".thinking-indicator");
-const movesAheadDepth = document.querySelector(".depth");
 
 const verticalPips = [1, 3, 2, 3, 1];
 const horizontalPips = [3, 1, 2, 1, 3];
 
-let movesAhead = 9;
+let movesAhead = 8;
 
 function getFallbackCell(row, col) {
   if ((row === 0 || row === 6) && col >= 1 && col <= 5) {
@@ -284,8 +283,8 @@ function getMoveScore(board, r, c) {
   }, 0);
 }
 
-function handleClick(rowIndex, cellIndex) {
-  const board = rows.map((row) => {
+function getBoard() {
+  return rows.map((row) => {
     return Array.from(row.children).map((cell) => {
       const classList = cell.classList;
       if (classList.contains("empty")) {
@@ -308,12 +307,47 @@ function handleClick(rowIndex, cellIndex) {
       }
     });
   });
+}
+
+function applySuggestions(board) {
+  document
+    .querySelectorAll(".suggested")
+    .forEach((el) => el.classList.remove("suggested"));
+  thinkingIndicator.classList.add("active");
+  setTimeout(() => {
+    let bestOrange = { score: -Infinity, r: -1, c: -1 };
+    let bestLime = { score: -Infinity, r: -1, c: -1 };
+    board.forEach((row, r) => {
+      const domCells = Array.from(rows[r].children);
+      row.forEach((cell, c) => {
+        const domCell = domCells[c];
+        if (
+          isPiece(cell) &&
+          (cell !== "^" || r !== 0) &&
+          (cell !== "<" || c !== 0)
+        ) {
+          const score = getMoveScore(board, r, c);
+          domCell.setAttribute("data-score", score);
+          if (getPieceColor(cell) === "orange" && score > bestOrange.score) {
+            bestOrange = { score, r, c };
+          } else if (getPieceColor(cell) === "lime" && score > bestLime.score) {
+            bestLime = { score, r, c };
+          }
+        }
+      });
+    });
+    rows[bestOrange.r].children[bestOrange.c].classList.add("suggested");
+    rows[bestLime.r].children[bestLime.c].classList.add("suggested");
+    thinkingIndicator.classList.remove("active");
+  });
+}
+
+function handleClick(rowIndex, cellIndex) {
+  const board = getBoard();
   if (!isPiece(board[rowIndex][cellIndex]) || hasGameEnded(board)) {
     return;
   }
   const nextBoard = getNextBoard(board, rowIndex, cellIndex);
-  let bestOrange = { score: -Infinity, r: -1, c: -1 };
-  let bestLime = { score: -Infinity, r: -1, c: -1 };
   nextBoard.forEach((row, r) => {
     const domCells = Array.from(rows[r].children);
     row.forEach((cell, c) => {
@@ -339,34 +373,7 @@ function handleClick(rowIndex, cellIndex) {
       }
     });
   });
-  document
-    .querySelectorAll(".suggested")
-    .forEach((el) => el.classList.remove("suggested"));
-  thinkingIndicator.classList.add("active");
-  setTimeout(() => {
-    nextBoard.forEach((row, r) => {
-      const domCells = Array.from(rows[r].children);
-      row.forEach((cell, c) => {
-        const domCell = domCells[c];
-        if (
-          isPiece(cell) &&
-          (cell !== "^" || r !== 0) &&
-          (cell !== "<" || c !== 0)
-        ) {
-          const score = getMoveScore(nextBoard, r, c);
-          domCell.setAttribute("data-score", score);
-          if (getPieceColor(cell) === "orange" && score > bestOrange.score) {
-            bestOrange = { score, r, c };
-          } else if (getPieceColor(cell) === "lime" && score > bestLime.score) {
-            bestLime = { score, r, c };
-          }
-        }
-      });
-    });
-    rows[bestOrange.r].children[bestOrange.c].classList.add("suggested");
-    rows[bestLime.r].children[bestLime.c].classList.add("suggested");
-    thinkingIndicator.classList.remove("active");
-  });
+  applySuggestions(nextBoard);
 }
 
 rows.forEach((row, rowIndex) => {
@@ -375,16 +382,22 @@ rows.forEach((row, rowIndex) => {
   });
 });
 
-document.querySelector(".number-control .up").addEventListener("click", () => {
-  movesAhead++;
-  movesAheadDepth.innerHTML = movesAhead;
+const upButton = document.querySelector(".number-control .up");
+const downButton = document.querySelector(".number-control .down");
+const movesAheadDepth = document.querySelector(".depth");
+
+function handleDepthChange(delta) {
+  if (delta > 0 || movesAhead > 1) {
+    movesAhead = movesAhead + delta;
+    movesAheadDepth.innerHTML = movesAhead;
+    applySuggestions(getBoard());
+  }
+}
+
+upButton.addEventListener("click", () => {
+  handleDepthChange(1);
 });
 
-document
-  .querySelector(".number-control .down")
-  .addEventListener("click", () => {
-    if (movesAhead > 1) {
-      movesAhead--;
-      movesAheadDepth.innerHTML = movesAhead;
-    }
-  });
+downButton.addEventListener("click", () => {
+  handleDepthChange(-1);
+});
