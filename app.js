@@ -314,31 +314,36 @@ function applySuggestions(board) {
     .querySelectorAll(".suggested")
     .forEach((el) => el.classList.remove("suggested"));
   thinkingIndicator.classList.add("active");
-  setTimeout(() => {
-    let bestOrange = { score: -Infinity, r: -1, c: -1 };
-    let bestLime = { score: -Infinity, r: -1, c: -1 };
-    board.forEach((row, r) => {
-      const domCells = Array.from(rows[r].children);
-      row.forEach((cell, c) => {
-        const domCell = domCells[c];
-        if (
-          isPiece(cell) &&
-          (cell !== "^" || r !== 0) &&
-          (cell !== "<" || c !== 0)
-        ) {
-          const score = getMoveScore(board, r, c);
-          domCell.setAttribute("data-score", score);
-          if (getPieceColor(cell) === "orange" && score > bestOrange.score) {
-            bestOrange = { score, r, c };
-          } else if (getPieceColor(cell) === "lime" && score > bestLime.score) {
-            bestLime = { score, r, c };
+  requestAnimationFrame(() => {
+    setTimeout(() => {
+      let bestOrange = { score: -Infinity, r: -1, c: -1 };
+      let bestLime = { score: -Infinity, r: -1, c: -1 };
+      board.forEach((row, r) => {
+        const domCells = Array.from(rows[r].children);
+        row.forEach((cell, c) => {
+          const domCell = domCells[c];
+          if (
+            isPiece(cell) &&
+            (cell !== "^" || r !== 0) &&
+            (cell !== "<" || c !== 0)
+          ) {
+            const score = getMoveScore(board, r, c);
+            domCell.setAttribute("data-score", score);
+            if (getPieceColor(cell) === "orange" && score > bestOrange.score) {
+              bestOrange = { score, r, c };
+            } else if (
+              getPieceColor(cell) === "lime" &&
+              score > bestLime.score
+            ) {
+              bestLime = { score, r, c };
+            }
           }
-        }
+        });
       });
-    });
-    rows[bestOrange.r].children[bestOrange.c].classList.add("suggested");
-    rows[bestLime.r].children[bestLime.c].classList.add("suggested");
-    thinkingIndicator.classList.remove("active");
+      rows[bestOrange.r].children[bestOrange.c].classList.add("suggested");
+      rows[bestLime.r].children[bestLime.c].classList.add("suggested");
+      thinkingIndicator.classList.remove("active");
+    }, 1);
   });
 }
 
