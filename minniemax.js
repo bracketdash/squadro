@@ -29,31 +29,46 @@ class MinnieMax {
   }
 
   getScoredMoves(state, player) {
+    // TODO: genericize this
     const scoredMoves = [];
-    this.generateMoves(state, player).forEach((move) => {
+    this.generateMoves(state, player).forEach(({ ri, ci }) => {
       const futureStates = [];
       const stack = [
         {
           state,
-          move,
+          ri,
+          ci,
           moves: this.depth,
           player,
           first: true,
         },
       ];
       while (stack.length > 0) {
-        let { state, move, moves, player, first } = stack.pop();
+        let { state, ri, ci, moves, player, first } = stack.pop();
         if (moves < 1) {
           continue;
         }
-        const newMoves = [];
+        const pieces = [];
         if (first) {
-          newMoves.push(move);
+          pieces.push({ r: ri, c: ci });
         } else {
-          newMoves.push(...this.generateMoves(state, player));
+          for (let r = 0; r < state.length; r++) {
+            for (let c = 0; c < state[r].length; c++) {
+              const cell = state[r][c];
+              if (
+                (player === 1 && (cell === ">" || cell === "<")) ||
+                (player === 2 && (cell === "v" || cell === "^"))
+              ) {
+                pieces.push({ r, c });
+              }
+            }
+          }
         }
-        for (const newMove of newMoves) {
-          const next = this.applyMove(state, newMove);
+        for (const { r, c } of pieces) {
+          const next = this.applyMove(state, {
+            ri: r,
+            ci: c,
+          });
           if (moves === 1 || this.isGameOver(next)) {
             const multiplier = Math.pow(5, moves - 1);
             for (let i = 0; i < multiplier; i++) {
@@ -62,7 +77,8 @@ class MinnieMax {
           } else {
             stack.push({
               state: next,
-              newMove,
+              ri,
+              ci,
               moves: moves - 1,
               player: player === 1 ? 2 : 1,
               first: false,
@@ -75,7 +91,7 @@ class MinnieMax {
         const opponentScore = this.evaluate(state, player === 1 ? 2 : 1);
         return sum + myScore - opponentScore;
       }, 0);
-      scoredMoves.push({ move, score });
+      scoredMoves.push({ move: { ri, ci }, score });
     });
     return scoredMoves;
   }
