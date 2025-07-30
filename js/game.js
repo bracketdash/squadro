@@ -123,14 +123,17 @@ class SquadroGame {
 
   evaluate(state, player) {
     const advances = [];
-    for (let r = 0; r < state.length; r++) {
-      for (let c = 0; c < state[r].length; c++) {
-        const cell = state[r][c];
+    const isPlayer1 = player === 1;
+    const isPlayer2 = player === 2;
+    for (let ri = 0; ri < state.length; ri++) {
+      const row = state[ri];
+      for (let ci = 0; ci < row.length; ci++) {
+        const cell = row[ci];
         if (
-          (player === 1 && (cell === ">" || cell === "<")) ||
-          (player === 2 && (cell === "v" || cell === "^"))
+          (isPlayer1 && (cell === ">" || cell === "<")) ||
+          (isPlayer2 && (cell === "v" || cell === "^"))
         ) {
-          advances.push(this._getProgress(cell, r, c));
+          advances.push(this._getProgress(cell, ri, ci));
         }
       }
     }
@@ -142,16 +145,20 @@ class SquadroGame {
 
   generateMoves(state, player) {
     const moves = [];
-    state.forEach((row, ri) => {
-      row.forEach((cell, ci) => {
+    const isPlayer1 = player === 1;
+    const isPlayer2 = player === 2;
+    for (let ri = 0; ri < state.length; ri++) {
+      const row = state[ri];
+      for (let ci = 0; ci < row.length; ci++) {
+        const cell = row[ci];
         if (
-          (player === 1 && ((cell === "<" && ci !== 0) || cell === ">")) ||
-          (player === 2 && ((cell === "^" && ri !== 0) || cell === "v"))
+          (isPlayer1 && ((cell === "<" && ci !== 0) || cell === ">")) ||
+          (isPlayer2 && ((cell === "^" && ri !== 0) || cell === "v"))
         ) {
           moves.push({ ri, ci });
         }
-      });
-    });
+      }
+    }
     return moves;
   }
 
