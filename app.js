@@ -1,4 +1,5 @@
-function applySuggestions(state) {
+function applySuggestions(minnie, game) {
+  const state = game.getState();
   const thinker = document.querySelector(".thinker").classList;
   document
     .querySelectorAll(".suggested")
@@ -57,7 +58,7 @@ function applySuggestions(state) {
                   rowIndex: r,
                   cellIndex: c,
                 });
-                if (moves === 1 || game.hasGameEnded(next)) {
+                if (moves === 1 || game.isGameOver(next)) {
                   const multiplier = Math.pow(5, moves - 1);
                   for (let i = 0; i < multiplier; i++) {
                     futureStates.push(next);
@@ -94,8 +95,56 @@ function applySuggestions(state) {
   });
 }
 
-function updateDOM(state) {
-  state.forEach((row, r) => {
+function handleDepthChange(minnie, game, delta) {
+  const currDepth = minnie.getDepth();
+  const newDepth = minnie.setDepth(currDepth + delta);
+  if (currDepth !== newDepth) {
+    document.querySelector(".depth").innerHTML = newDepth;
+    applySuggestions(minnie, game);
+  }
+}
+
+function init() {
+  const game = new SquadroGame();
+  const minnie = new MinnieMax({
+    applyMove: game.applyMove,
+    depth: 7,
+    evaluate: game.evaluate,
+    generateMoves: game.generateMoves,
+    isGameOver: game.isGameOver,
+  });
+  document.querySelectorAll(".row").forEach((row, rowIndex) => {
+    Array.from(row.children).forEach((cell, cellIndex) => {
+      cell.addEventListener("click", () => {
+        const state = game.getState();
+        if (
+          !game.isPiece(state[rowIndex][cellIndex]) ||
+          game.isGameOver(state)
+        ) {
+          return;
+        }
+        game.applyMove(state, { rowIndex, cellIndex }, true);
+        updateDOM(minnie, game);
+      });
+    });
+  });
+  const numberControl = document.querySelector(".number-control");
+  numberControl.querySelector(".up").addEventListener("click", () => {
+    handleDepthChange(minnie, game, 1);
+  });
+  numberControl.querySelector(".down").addEventListener("click", () => {
+    handleDepthChange(minnie, game, -1);
+  });
+  document.querySelector(".undo").addEventListener("click", () => {
+    game.undoMove();
+    updateDOM(minnie, game);
+  });
+  document.querySelector(".depth").innerHTML = minnie.getDepth();
+  updateDOM(minnie, game);
+}
+
+function updateDOM(minnie, game) {
+  game.getState().forEach((row, r) => {
     const domCells = Array.from(
       Array.from(document.querySelectorAll(".row"))[r].children
     );
@@ -120,64 +169,7 @@ function updateDOM(state) {
       }
     });
   });
-  applySuggestions(state);
+  applySuggestions(minnie, game);
 }
-
-function handleCellClick(rowIndex, cellIndex) {
-  const state = game.getState();
-  if (!game.isPiece(state[rowIndex][cellIndex]) || game.hasGameEnded(state)) {
-    return;
-  }
-  updateDOM(game.applyMove(state, { rowIndex, cellIndex }, true));
-}
-
-function handleDepthChange(delta) {
-  const currDepth = minnie.getDepth();
-  const newDepth = minnie.setDepth(currDepth + delta);
-  if (currDepth !== newDepth) {
-    document.querySelector(".depth").innerHTML = newDepth;
-    applySuggestions(game.getState());
-  }
-}
-
-function init() {
-  document.querySelectorAll(".row").forEach((row, rowIndex) => {
-    Array.from(row.children).forEach((cell, cellIndex) => {
-      cell.addEventListener("click", () =>
-        handleCellClick(rowIndex, cellIndex)
-      );
-    });
-  });
-
-  document
-    .querySelector(".number-control .up")
-    .addEventListener("click", () => {
-      handleDepthChange(1);
-    });
-
-  document
-    .querySelector(".number-control .down")
-    .addEventListener("click", () => {
-      handleDepthChange(-1);
-    });
-
-  document.querySelector(".undo").addEventListener("click", () => {
-    updateDOM(game.undoMove());
-  });
-
-  document.querySelector(".depth").innerHTML = minnie.getDepth();
-
-  const state = game.getState();
-  updateDOM(state);
-}
-
-const game = new SquadroGame();
-
-const minnie = new MinnieMax({
-  applyMove: game.applyMove,
-  depth: 7,
-  evaluate: game.evaluate,
-  generateMoves: game.generateMoves,
-});
 
 init();

@@ -166,7 +166,7 @@ class SquadroGame {
     return this.history[this.history.length - 1];
   }
 
-  hasGameEnded(state) {
+  isGameOver(state) {
     const playerScores = [0, 0];
     for (let r = 0; r < state.length; r++) {
       for (let c = 0; c < state[r].length; c++) {
@@ -187,13 +187,13 @@ class SquadroGame {
   }
 
   undoMove() {
-    if (this.history.length > 1) {
-      this.history.pop();
-      if (localStorage) {
-        localStorage.setItem("history", JSON.stringify(this.history));
-      }
+    if (this.history.length < 2) {
+      return;
     }
-    return this.history[this.history.length - 1];
+    this.history.pop();
+    if (localStorage) {
+      localStorage.setItem("history", JSON.stringify(this.history));
+    }
   }
 
   _getFallbackCell(row, col) {
