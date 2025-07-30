@@ -31,21 +31,18 @@ class SquadroGame {
     }
   }
 
-  applyMove(state, { rowIndex, cellIndex }, pushState = false) {
+  applyMove(state, { ri, ci }, pushState = false) {
     const next = state.map((row) => row.slice());
-    const piece = state[rowIndex][cellIndex];
+    const piece = state[ri][ci];
     if (!this.isPiece(piece)) {
       return next;
     }
-    if (
-      (piece === "^" && rowIndex === 0) ||
-      (piece === "<" && cellIndex === 0)
-    ) {
+    if ((piece === "^" && ri === 0) || (piece === "<" && ci === 0)) {
       return state;
     }
     const homewardPipMap = [null, 3, 2, 1];
     const isVertical = piece === "v" || piece === "^";
-    const index = isVertical ? cellIndex - 1 : rowIndex - 1;
+    const index = isVertical ? ci - 1 : ri - 1;
     let dr = 0;
     let dc = 0;
     let speed = 0;
@@ -62,10 +59,10 @@ class SquadroGame {
       dc = -1;
       speed = homewardPipMap[this.horizontalPips[index]];
     }
-    next[rowIndex][cellIndex] = this._getFallbackCell(rowIndex, cellIndex);
+    next[ri][ci] = this._getFallbackCell(ri, ci);
     const jumped = [];
-    let r = rowIndex;
-    let c = cellIndex;
+    let r = ri;
+    let c = ci;
     let distanceRemaining = speed;
     let jumpedMode = false;
     while (distanceRemaining > 0 || jumpedMode) {
@@ -90,13 +87,13 @@ class SquadroGame {
       }
     }
     let newChar = piece;
-    if (piece === "v" && r === 6 && rowIndex !== 6) {
+    if (piece === "v" && r === 6 && ri !== 6) {
       newChar = "^";
-    } else if (piece === "^" && r === 0 && rowIndex !== 0) {
+    } else if (piece === "^" && r === 0 && ri !== 0) {
       newChar = "^";
-    } else if (piece === ">" && c === 6 && cellIndex !== 6) {
+    } else if (piece === ">" && c === 6 && ci !== 6) {
       newChar = "<";
-    } else if (piece === "<" && c === 0 && cellIndex !== 0) {
+    } else if (piece === "<" && c === 0 && ci !== 0) {
       newChar = "<";
     }
     next[r][c] = newChar;
@@ -145,13 +142,13 @@ class SquadroGame {
 
   generateMoves(state, player) {
     const moves = [];
-    state.forEach((row, r) => {
-      row.forEach((cell, c) => {
+    state.forEach((row, ri) => {
+      row.forEach((cell, ci) => {
         if (
-          (player === 1 && ((cell === "<" && c !== 0) || cell === ">")) ||
-          (player === 2 && ((cell === "^" && r !== 0) || cell === "v"))
+          (player === 1 && ((cell === "<" && ci !== 0) || cell === ">")) ||
+          (player === 2 && ((cell === "^" && ri !== 0) || cell === "v"))
         ) {
-          moves.push({ ri: r, ci: c });
+          moves.push({ ri, ci });
         }
       });
     });

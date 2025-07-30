@@ -55,8 +55,8 @@ function applySuggestions(minnie, game) {
               }
               for (const { r, c } of pieces) {
                 const next = game.applyMove(state, {
-                  rowIndex: r,
-                  cellIndex: c,
+                  ri: r,
+                  ci: c,
                 });
                 if (moves === 1 || game.isGameOver(next)) {
                   const multiplier = Math.pow(5, moves - 1);
@@ -113,17 +113,14 @@ function init() {
     generateMoves: game.generateMoves,
     isGameOver: game.isGameOver,
   });
-  document.querySelectorAll(".row").forEach((row, rowIndex) => {
-    Array.from(row.children).forEach((cell, cellIndex) => {
+  document.querySelectorAll(".row").forEach((row, ri) => {
+    Array.from(row.children).forEach((cell, ci) => {
       cell.addEventListener("click", () => {
         const state = game.getState();
-        if (
-          !game.isPiece(state[rowIndex][cellIndex]) ||
-          game.isGameOver(state)
-        ) {
+        if (!game.isPiece(state[ri][ci]) || game.isGameOver(state)) {
           return;
         }
-        game.applyMove(state, { rowIndex, cellIndex }, true);
+        game.applyMove(state, { ri, ci }, true);
         updateDOM(minnie, game);
       });
     });
