@@ -1,95 +1,19 @@
 function applySuggestions(minnie, game) {
-  const state = game.getState();
   const thinker = document.querySelector(".thinker").classList;
   document
     .querySelectorAll(".suggested")
     .forEach((el) => el.classList.remove("suggested"));
   thinker.add("active");
-  // TODO: make this non-blocking, maybe with web workers where supported?
   requestAnimationFrame(() => {
     setTimeout(() => {
-      // TODO: move (partially) to minnie, then call minnie.getScoredMoves() here
       const rows = Array.from(document.querySelectorAll(".row"));
-      let bestOrange = { score: -Infinity, r: -1, c: -1 };
-      let bestLime = { score: -Infinity, r: -1, c: -1 };
-      state.forEach((row, ri) => {
-        row.forEach((cell, ci) => {
-          const player = game.getPiecePlayer(cell);
-          if (
-            game.isPiece(cell) &&
-            (cell !== "^" || ri !== 0) &&
-            (cell !== "<" || ci !== 0)
-          ) {
-            const futureStates = [];
-            const stack = [
-              {
-                state,
-                ri,
-                ci,
-                moves: minnie.getDepth(),
-                player,
-                first: true,
-              },
-            ];
-            while (stack.length > 0) {
-              let { state, ri, ci, moves, player, first } = stack.pop();
-              if (moves < 1) {
-                continue;
-              }
-              const pieces = [];
-              if (first) {
-                player = game.getPiecePlayer(state[ri][ci]);
-                pieces.push({ r: ri, c: ci });
-              } else {
-                for (let r = 0; r < state.length; r++) {
-                  for (let c = 0; c < state[r].length; c++) {
-                    const cell = state[r][c];
-                    if (
-                      (player === 1 && (cell === ">" || cell === "<")) ||
-                      (player === 2 && (cell === "v" || cell === "^"))
-                    ) {
-                      pieces.push({ r, c });
-                    }
-                  }
-                }
-              }
-              for (const { r, c } of pieces) {
-                const next = game.applyMove(state, {
-                  ri: r,
-                  ci: c,
-                });
-                if (moves === 1 || game.isGameOver(next)) {
-                  const multiplier = Math.pow(5, moves - 1);
-                  for (let i = 0; i < multiplier; i++) {
-                    futureStates.push(next);
-                  }
-                } else {
-                  stack.push({
-                    state: next,
-                    ri,
-                    ci,
-                    moves: moves - 1,
-                    player: player === 1 ? 2 : 1,
-                    first: false,
-                  });
-                }
-              }
-            }
-            const score = futureStates.reduce((sum, state) => {
-              const myScore = game.evaluate(state, player);
-              const opponentScore = game.evaluate(state, player === 1 ? 2 : 1);
-              return sum + myScore - opponentScore;
-            }, 0);
-            if (player === 1 && score > bestLime.score) {
-              bestLime = { score, ri, ci };
-            } else if (player === 2 && score > bestOrange.score) {
-              bestOrange = { score, ri, ci };
-            }
-          }
-        });
+      const state = game.getState();
+      [1, 2].forEach((player) => {
+        const { ri, ci } = minnie
+          .getScoredMoves(state, player)
+          .sort((a, b) => a.score > b.score)[0].move;
+        rows[ri].children[ci].classList.add("suggested");
       });
-      rows[bestOrange.ri].children[bestOrange.ci].classList.add("suggested");
-      rows[bestLime.ri].children[bestLime.ci].classList.add("suggested");
       thinker.remove("active");
     }, 1);
   });
@@ -107,9 +31,9 @@ function handleDepthChange(minnie, game, delta) {
 function init() {
   const game = new SquadroGame();
   const minnie = new MinnieMax({
-    applyMove: game.applyMove,
+    applyMove: game.applyMove.bind(game),
     depth: 7,
-    evaluate: game.evaluate,
+    evaluate: game.evaluate.bind(game),
     generateMoves: game.generateMoves,
     isGameOver: game.isGameOver,
   });
