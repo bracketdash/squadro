@@ -1,16 +1,5 @@
-const rows = Array.from(document.querySelectorAll(".row"));
-
-const game = new SquadroGame(getBoard());
-
-const minnie = new MinnieMax({
-  applyMove: game.applyMove,
-  depth: 8,
-  evaluate: game.evaluate,
-  generateMoves: game.generateMoves,
-});
-
 // TODO: move to minnie
-function getFutureBoards(startBoard, ri, ci, moves, color, first = true) {
+function getFutureBoards(startBoard, ri, ci, moves, player, first = true) {
   const results = [];
   const stack = [
     {
@@ -18,27 +7,26 @@ function getFutureBoards(startBoard, ri, ci, moves, color, first = true) {
       ri,
       ci,
       moves,
-      color,
+      player,
       first,
     },
   ];
   while (stack.length > 0) {
-    let { board, ri, ci, moves, color, first } = stack.pop();
+    let { board, ri, ci, moves, player, first } = stack.pop();
     if (moves < 1) {
       continue;
     }
     const pieces = [];
     if (first) {
-      const pieceColor = game.getPieceColor(board[ri][ci]);
+      player = game.getPiecePlayer(board[ri][ci]);
       pieces.push({ r: ri, c: ci });
-      color = pieceColor;
     } else {
       for (let r = 0; r < board.length; r++) {
         for (let c = 0; c < board[r].length; c++) {
           const cell = board[r][c];
           if (
-            (color === "orange" && (cell === "v" || cell === "^")) ||
-            (color === "lime" && (cell === ">" || cell === "<"))
+            (player === 1 && (cell === ">" || cell === "<")) ||
+            (player === 2 && (cell === "v" || cell === "^"))
           ) {
             pieces.push({ r, c });
           }
@@ -58,7 +46,7 @@ function getFutureBoards(startBoard, ri, ci, moves, color, first = true) {
           ri,
           ci,
           moves: moves - 1,
-          color: game.getOppositeColor(color),
+          player: player === 1 ? 2 : 1,
           first: false,
         });
       }
@@ -69,52 +57,26 @@ function getFutureBoards(startBoard, ri, ci, moves, color, first = true) {
 
 // TODO: move to minnie
 function getMoveScore(board, r, c) {
-  const playerColor = game.getPieceColor(board[r][c]);
+  const player = game.getPiecePlayer(board[r][c]);
   const futureBoards = getFutureBoards(board, r, c, minnie.getDepth());
   return futureBoards.reduce((sum, board) => {
-    const myScore = game.evaluate(board, playerColor);
-    const opponentColor = game.getOppositeColor(playerColor);
-    const opponentScore = game.evaluate(board, opponentColor);
+    const myScore = game.evaluate(board, player);
+    const opponentScore = game.evaluate(board, player === 1 ? 2 : 1);
     return sum + myScore - opponentScore;
   }, 0);
 }
 
-function getBoard() {
-  return rows.map((row) => {
-    return Array.from(row.children).map((cell) => {
-      const classList = cell.classList;
-      if (classList.contains("empty")) {
-        return " ";
-      }
-      if (classList.contains("orange")) {
-        return classList.contains("down") ? "v" : "^";
-      }
-      if (classList.contains("lime")) {
-        return classList.contains("rightward") ? ">" : "<";
-      }
-      if (classList.contains("cross")) {
-        return "+";
-      }
-      if (classList.contains("horizontal")) {
-        return "-";
-      }
-      if (classList.contains("vertical")) {
-        return "|";
-      }
-    });
-  });
-}
-
-const thinkingIndicator = document.querySelector(".thinking-indicator");
-
 // TODO: move (partially) to minnie
 function applySuggestions(board) {
+  const thinker = document.querySelector(".thinker").classList;
   document
     .querySelectorAll(".suggested")
     .forEach((el) => el.classList.remove("suggested"));
-  thinkingIndicator.classList.add("active");
+  thinker.add("active");
+  // TODO: make this non-blocking, maybe with web workers where supported?
   requestAnimationFrame(() => {
     setTimeout(() => {
+      const rows = Array.from(document.querySelectorAll(".row"));
       // TODO: just grab the scored moves for each player here, then figure out bestOrange and bestLime from there
       let bestOrange = { score: -Infinity, r: -1, c: -1 };
       let bestLime = { score: -Infinity, r: -1, c: -1 };
@@ -129,16 +91,13 @@ function applySuggestions(board) {
           ) {
             const score = getMoveScore(board, r, c);
             domCell.setAttribute("data-score", score);
-            if (
-              game.getPieceColor(cell) === "orange" &&
+            if (game.getPiecePlayer(cell) === 1 && score > bestLime.score) {
+              bestLime = { score, r, c };
+            } else if (
+              game.getPiecePlayer(cell) === 2 &&
               score > bestOrange.score
             ) {
               bestOrange = { score, r, c };
-            } else if (
-              game.getPieceColor(cell) === "lime" &&
-              score > bestLime.score
-            ) {
-              bestLime = { score, r, c };
             }
           }
         });
@@ -146,14 +105,16 @@ function applySuggestions(board) {
 
       rows[bestOrange.r].children[bestOrange.c].classList.add("suggested");
       rows[bestLime.r].children[bestLime.c].classList.add("suggested");
-      thinkingIndicator.classList.remove("active");
+      thinker.remove("active");
     }, 1);
   });
 }
 
 function updateBoard(board) {
   board.forEach((row, r) => {
-    const domCells = Array.from(rows[r].children);
+    const domCells = Array.from(
+      Array.from(document.querySelectorAll(".row"))[r].children
+    );
     row.forEach((cell, c) => {
       const domCell = domCells[c];
       const classList = domCell.classList;
@@ -179,8 +140,8 @@ function updateBoard(board) {
   });
 }
 
-function handleClick(rowIndex, cellIndex) {
-  const board = getBoard();
+function handleCellClick(rowIndex, cellIndex) {
+  const board = game.getState();
   if (!game.isPiece(board[rowIndex][cellIndex]) || game.hasGameEnded(board)) {
     return;
   }
@@ -189,38 +150,56 @@ function handleClick(rowIndex, cellIndex) {
   applySuggestions(nextBoard);
 }
 
-rows.forEach((row, rowIndex) => {
-  Array.from(row.children).forEach((cell, cellIndex) => {
-    cell.addEventListener("click", () => handleClick(rowIndex, cellIndex));
-  });
-});
-
-const upButton = document.querySelector(".number-control .up");
-const downButton = document.querySelector(".number-control .down");
-const movesAheadDepth = document.querySelector(".depth");
-const undoButton = document.querySelector(".undo");
-
 function handleDepthChange(delta) {
   const currDepth = minnie.getDepth();
   const newDepth = minnie.setDepth(currDepth + delta);
   if (currDepth !== newDepth) {
-    movesAheadDepth.innerHTML = newDepth;
-    applySuggestions(getBoard());
+    document.querySelector(".depth").innerHTML = newDepth;
+    applySuggestions(game.getState());
   }
 }
 
-upButton.addEventListener("click", () => {
-  handleDepthChange(1);
+function init() {
+  document.querySelectorAll(".row").forEach((row, rowIndex) => {
+    Array.from(row.children).forEach((cell, cellIndex) => {
+      cell.addEventListener("click", () =>
+        handleCellClick(rowIndex, cellIndex)
+      );
+    });
+  });
+
+  document
+    .querySelector(".number-control .up")
+    .addEventListener("click", () => {
+      handleDepthChange(1);
+    });
+
+  document
+    .querySelector(".number-control .down")
+    .addEventListener("click", () => {
+      handleDepthChange(-1);
+    });
+
+  document.querySelector(".undo").addEventListener("click", () => {
+    const board = game.undoMove();
+    updateBoard(board);
+    applySuggestions(board);
+  });
+
+  document.querySelector(".depth").innerHTML = minnie.getDepth();
+
+  const state = game.getState();
+  updateBoard(state);
+  applySuggestions(state);
+}
+
+const game = new SquadroGame();
+
+const minnie = new MinnieMax({
+  applyMove: game.applyMove,
+  depth: 7,
+  evaluate: game.evaluate,
+  generateMoves: game.generateMoves,
 });
 
-downButton.addEventListener("click", () => {
-  handleDepthChange(-1);
-});
-
-undoButton.addEventListener("click", () => {
-  const board = game.undoMove();
-  updateBoard(board);
-  applySuggestions(board);
-});
-
-movesAheadDepth.innerHTML = minnie.getDepth();
+init();

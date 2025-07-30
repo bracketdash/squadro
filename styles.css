@@ -243,7 +243,7 @@ body {
   text-align: center;
 }
 
-.thinking-indicator {
+.thinker {
   background: #999;
   border-radius: 50%;
   height: 42px;
@@ -255,7 +255,7 @@ body {
   width: 42px;
 }
 
-.thinking-indicator::before {
+.thinker::before {
   animation: swirl 3s linear infinite;
   background: conic-gradient(from 0deg, #369, #147, #69b, #369);
   border-radius: 50%;
@@ -269,7 +269,7 @@ body {
   z-index: 0;
 }
 
-.thinking-indicator::after {
+.thinker::after {
   background: radial-gradient(
     circle at 30% 30%,
     rgba(255, 255, 255, 0.2),
@@ -283,12 +283,12 @@ body {
   z-index: 1;
 }
 
-.thinking-indicator:not(.active)::before {
+.thinker:not(.active)::before {
   animation-play-state: paused;
   opacity: 0;
 }
 
-.thinking-indicator.active {
+.thinker.active {
   animation: pulse 3s ease-in-out infinite;
   background: #369;
   opacity: 1;
@@ -321,7 +321,7 @@ body {
   cursor: pointer;
   font-size: 20px;
   height: 31px;
-  line-height: 32px;
+  line-height: 31px;
   text-align: center;
   width: 31px;
 }

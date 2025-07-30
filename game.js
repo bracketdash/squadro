@@ -1,19 +1,34 @@
 class SquadroGame {
-  constructor(initialState) {
-    this.verticalPips = [1, 3, 2, 3, 1];
+  constructor() {
     this.horizontalPips = [3, 1, 2, 1, 3];
-    this.history = [initialState];
-  }
-
-  undoMove() {
-    if (this.history.length > 1) {
-      this.history.pop();
+    this.verticalPips = [1, 3, 2, 3, 1];
+    this.history = [
+      [
+        [" ", "v", "v", "v", "v", "v", " "],
+        [">", "+", "+", "+", "+", "+", "-"],
+        [">", "+", "+", "+", "+", "+", "-"],
+        [">", "+", "+", "+", "+", "+", "-"],
+        [">", "+", "+", "+", "+", "+", "-"],
+        [">", "+", "+", "+", "+", "+", "-"],
+        [" ", "|", "|", "|", "|", "|", " "],
+      ],
+    ];
+    const storedHistory = localStorage?.getItem("history");
+    if (storedHistory) {
+      let storedHistoryParsed;
+      try {
+        storedHistoryParsed = JSON.parse(storedHistory);
+      } catch (e) {
+        console.warn("Could not parse stored history.");
+      }
+      if (storedHistoryParsed) {
+        this.history = storedHistoryParsed;
+      } else {
+        console.log("Starting a new game.");
+      }
+    } else {
+      console.log("No stored history. Starting a new game.");
     }
-    return this.history[this.history.length - 1];
-  }
-
-  isPiece(candidate) {
-    return ["v", "^", ">", "<"].includes(candidate);
   }
 
   applyMove(board, { rowIndex, cellIndex }, pushState = false) {
@@ -102,8 +117,42 @@ class SquadroGame {
     }
     if (pushState) {
       this.history.push(next);
+      if (localStorage) {
+        localStorage.setItem("history", JSON.stringify(this.history));
+      }
     }
     return next;
+  }
+
+  evaluate(board, player) {
+    const advances = [];
+    for (let r = 0; r < board.length; r++) {
+      for (let c = 0; c < board[r].length; c++) {
+        const cell = board[r][c];
+        if (
+          (player === 1 && (cell === ">" || cell === "<")) ||
+          (player === 2 && (cell === "v" || cell === "^"))
+        ) {
+          advances.push(this._getProgress(cell, r, c));
+        }
+      }
+    }
+    return advances
+      .sort((a, b) => b - a)
+      .slice(0, 4)
+      .reduce((a, b) => a + b, 0);
+  }
+
+  generateMoves(board, player) {
+    // TODO
+  }
+
+  getPiecePlayer(piece) {
+    return piece === "<" || piece === ">" ? 1 : 2;
+  }
+
+  getState() {
+    return this.history[this.history.length - 1];
   }
 
   hasGameEnded(board) {
@@ -122,35 +171,18 @@ class SquadroGame {
     return playerScores[0] >= 4 || playerScores[1] >= 4;
   }
 
-  getPieceColor(piece) {
-    return piece === "v" || piece === "^" ? "orange" : "lime";
+  isPiece(candidate) {
+    return ["v", "^", ">", "<"].includes(candidate);
   }
 
-  getOppositeColor(color) {
-    return color === "orange" ? "lime" : "orange";
-  }
-
-  evaluate(board, color) {
-    const advances = [];
-    for (let r = 0; r < board.length; r++) {
-      for (let c = 0; c < board[r].length; c++) {
-        const cell = board[r][c];
-        if (
-          (color === "orange" && (cell === "v" || cell === "^")) ||
-          (color === "lime" && (cell === ">" || cell === "<"))
-        ) {
-          advances.push(this._getProgress(cell, r, c));
-        }
+  undoMove() {
+    if (this.history.length > 1) {
+      this.history.pop();
+      if (localStorage) {
+        localStorage.setItem("history", JSON.stringify(this.history));
       }
     }
-    return advances
-      .sort((a, b) => b - a)
-      .slice(0, 4)
-      .reduce((a, b) => a + b, 0);
-  }
-
-  generateMoves(board, color) {
-    // TODO
+    return this.history[this.history.length - 1];
   }
 
   _getFallbackCell(row, col) {
