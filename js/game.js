@@ -31,8 +31,11 @@ class SquadroGame {
     }
   }
 
-  applyMove(state, { ri, ci }, pushState = false) {
-    const next = state.map((row) => row.slice());
+  applyMove(state, { ri, ci }) {
+    const next = Array(7);
+    for (let i = 0; i < 7; i++) {
+      next[i] = state[i].slice();
+    }
     const piece = state[ri][ci];
     if (!this.isPiece(piece)) {
       return next;
@@ -46,18 +49,23 @@ class SquadroGame {
     let dr = 0;
     let dc = 0;
     let speed = 0;
-    if (piece === "v") {
-      dr = 1;
-      speed = this.verticalPips[index];
-    } else if (piece === "^") {
-      dr = -1;
-      speed = homewardPipMap[this.verticalPips[index]];
-    } else if (piece === ">") {
-      dc = 1;
-      speed = this.horizontalPips[index];
-    } else if (piece === "<") {
-      dc = -1;
-      speed = homewardPipMap[this.horizontalPips[index]];
+    switch (piece) {
+      case "v":
+        dr = 1;
+        speed = this.verticalPips[index];
+        break;
+      case "^":
+        dr = -1;
+        speed = homewardPipMap[this.verticalPips[index]];
+        break;
+      case ">":
+        dc = 1;
+        speed = this.horizontalPips[index];
+        break;
+      case "<":
+        dc = -1;
+        speed = homewardPipMap[this.horizontalPips[index]];
+        break;
     }
     next[ri][ci] = this._getFallbackCell(ri, ci);
     const jumped = [];
@@ -86,37 +94,23 @@ class SquadroGame {
         distanceRemaining--;
       }
     }
-    let newChar = piece;
-    if (piece === "v" && r === 6 && ri !== 6) {
-      newChar = "^";
-    } else if (piece === "^" && r === 0 && ri !== 0) {
-      newChar = "^";
-    } else if (piece === ">" && c === 6 && ci !== 6) {
-      newChar = "<";
-    } else if (piece === "<" && c === 0 && ci !== 0) {
-      newChar = "<";
+    next[r][c] = piece;
+    if (
+      (piece === "v" && r === 6 && ri !== 6) ||
+      (piece === "^" && r === 0 && ri !== 0)
+    ) {
+      next[r][c] = "^";
+    } else if (
+      (piece === ">" && c === 6 && ci !== 6) ||
+      (piece === "<" && c === 0 && ci !== 0)
+    ) {
+      next[r][c] = "<";
     }
-    next[r][c] = newChar;
     for (const { r: jr, c: jc, p } of jumped) {
       next[jr][jc] = this._getFallbackCell(jr, jc);
-      if (p === "v") {
-        next[0][jc] = "v";
-      }
-      if (p === "^") {
-        next[6][jc] = "^";
-      }
-      if (p === ">") {
-        next[jr][0] = ">";
-      }
-      if (p === "<") {
-        next[jr][6] = "<";
-      }
-    }
-    if (pushState) {
-      this.history.push(next);
-      if (localStorage) {
-        localStorage.setItem("history", JSON.stringify(this.history));
-      }
+      const homeRow = p === "v" ? 0 : p === "^" ? 6 : jr;
+      const homeCol = p === ">" ? 0 : p === "<" ? 6 : jc;
+      next[homeRow][homeCol] = p;
     }
     return next;
   }
@@ -188,6 +182,13 @@ class SquadroGame {
 
   isPiece(candidate) {
     return ["v", "^", ">", "<"].includes(candidate);
+  }
+
+  pushState(state) {
+    this.history.push(state);
+    if (localStorage) {
+      localStorage.setItem("history", JSON.stringify(this.history));
+    }
   }
 
   undoMove() {

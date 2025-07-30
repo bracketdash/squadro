@@ -4,6 +4,7 @@ function applySuggestions(minnie, game) {
     .querySelectorAll(".suggested")
     .forEach((el) => el.classList.remove("suggested"));
   thinker.add("active");
+  console.time("thinking");
   requestAnimationFrame(() => {
     setTimeout(() => {
       const rows = Array.from(document.querySelectorAll(".row"));
@@ -15,6 +16,7 @@ function applySuggestions(minnie, game) {
         rows[ri].children[ci].classList.add("suggested");
       });
       thinker.remove("active");
+      console.timeEnd("thinking");
     }, 1);
   });
 }
@@ -44,7 +46,7 @@ function init() {
         if (!game.isPiece(state[ri][ci]) || game.isGameOver(state)) {
           return;
         }
-        game.applyMove(state, { ri, ci }, true);
+        game.pushState(game.applyMove(state, { ri, ci }));
         updateDOM(minnie, game);
       });
     });

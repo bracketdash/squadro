@@ -36,13 +36,13 @@ class MinnieMax {
         {
           state,
           move,
-          moves: this.getDepth(),
+          moves: this.depth,
           player,
           first: true,
         },
       ];
       while (stack.length > 0) {
-        let { state, move, moves, player, first } = stack.pop();
+        const { state, move, moves, player, first } = stack.pop();
         if (moves < 1) {
           continue;
         }
@@ -50,7 +50,7 @@ class MinnieMax {
         if (first) {
           newMoves.push(move);
         } else {
-          newMoves.push(...this.generateMoves(state, player));
+          newMoves.push.apply(newMoves, this.generateMoves(state, player));
         }
         for (const newMove of newMoves) {
           const next = this.applyMove(state, newMove);
