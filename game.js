@@ -31,9 +31,9 @@ class SquadroGame {
     }
   }
 
-  applyMove(board, { rowIndex, cellIndex }, pushState = false) {
-    const next = board.map((row) => row.slice());
-    const piece = board[rowIndex][cellIndex];
+  applyMove(state, { rowIndex, cellIndex }, pushState = false) {
+    const next = state.map((row) => row.slice());
+    const piece = state[rowIndex][cellIndex];
     if (!this.isPiece(piece)) {
       return next;
     }
@@ -41,7 +41,7 @@ class SquadroGame {
       (piece === "^" && rowIndex === 0) ||
       (piece === "<" && cellIndex === 0)
     ) {
-      return board;
+      return state;
     }
     const homewardPipMap = [null, 3, 2, 1];
     const isVertical = piece === "v" || piece === "^";
@@ -124,11 +124,11 @@ class SquadroGame {
     return next;
   }
 
-  evaluate(board, player) {
+  evaluate(state, player) {
     const advances = [];
-    for (let r = 0; r < board.length; r++) {
-      for (let c = 0; c < board[r].length; c++) {
-        const cell = board[r][c];
+    for (let r = 0; r < state.length; r++) {
+      for (let c = 0; c < state[r].length; c++) {
+        const cell = state[r][c];
         if (
           (player === 1 && (cell === ">" || cell === "<")) ||
           (player === 2 && (cell === "v" || cell === "^"))
@@ -143,8 +143,19 @@ class SquadroGame {
       .reduce((a, b) => a + b, 0);
   }
 
-  generateMoves(board, player) {
-    // TODO
+  generateMoves(state, player) {
+    const moves = [];
+    state.forEach((row, r) => {
+      row.forEach((cell, c) => {
+        if (
+          (player === 1 && ((cell === "<" && c !== 0) || cell === ">")) ||
+          (player === 2 && ((cell === "^" && r !== 0) || cell === "v"))
+        ) {
+          moves.push({ ri: r, ci: c });
+        }
+      });
+    });
+    return moves;
   }
 
   getPiecePlayer(piece) {
@@ -155,11 +166,11 @@ class SquadroGame {
     return this.history[this.history.length - 1];
   }
 
-  hasGameEnded(board) {
+  hasGameEnded(state) {
     const playerScores = [0, 0];
-    for (let r = 0; r < board.length; r++) {
-      for (let c = 0; c < board[r].length; c++) {
-        const cell = board[r][c];
+    for (let r = 0; r < state.length; r++) {
+      for (let c = 0; c < state[r].length; c++) {
+        const cell = state[r][c];
         if (cell === "<" && c === 0) {
           playerScores[0]++;
         }
