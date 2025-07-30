@@ -4,7 +4,6 @@ class MinnieMax {
     this.depth = config.depth;
     this.evaluate = config.evaluate;
     this.generateMoves = config.generateMoves;
-    this.isGameOver = config.isGameOver;
     const storedDepth = localStorage?.getItem("depth");
     if (storedDepth) {
       const storedDepthParsed = parseInt(storedDepth, 10);
@@ -29,70 +28,6 @@ class MinnieMax {
   }
 
   getScoredMoves(state, player) {
-    // TODO: genericize this
-    const scoredMoves = [];
-    this.generateMoves(state, player).forEach(({ ri, ci }) => {
-      const futureStates = [];
-      const stack = [
-        {
-          state,
-          ri,
-          ci,
-          moves: this.depth,
-          player,
-          first: true,
-        },
-      ];
-      while (stack.length > 0) {
-        let { state, ri, ci, moves, player, first } = stack.pop();
-        if (moves < 1) {
-          continue;
-        }
-        const pieces = [];
-        if (first) {
-          pieces.push({ r: ri, c: ci });
-        } else {
-          for (let r = 0; r < state.length; r++) {
-            for (let c = 0; c < state[r].length; c++) {
-              const cell = state[r][c];
-              if (
-                (player === 1 && (cell === ">" || cell === "<")) ||
-                (player === 2 && (cell === "v" || cell === "^"))
-              ) {
-                pieces.push({ r, c });
-              }
-            }
-          }
-        }
-        for (const { r, c } of pieces) {
-          const next = this.applyMove(state, {
-            ri: r,
-            ci: c,
-          });
-          if (moves === 1 || this.isGameOver(next)) {
-            const multiplier = Math.pow(5, moves - 1);
-            for (let i = 0; i < multiplier; i++) {
-              futureStates.push(next);
-            }
-          } else {
-            stack.push({
-              state: next,
-              ri,
-              ci,
-              moves: moves - 1,
-              player: player === 1 ? 2 : 1,
-              first: false,
-            });
-          }
-        }
-      }
-      const score = futureStates.reduce((sum, state) => {
-        const myScore = this.evaluate(state, player);
-        const opponentScore = this.evaluate(state, player === 1 ? 2 : 1);
-        return sum + myScore - opponentScore;
-      }, 0);
-      scoredMoves.push({ move: { ri, ci }, score });
-    });
-    return scoredMoves;
+    // TODO
   }
 }
