@@ -50,7 +50,7 @@ class MinnieMax {
         for (const newMove of newMoves) {
           const next = this.applyMove(state, newMove);
           if (moves === 1 || this.isGameOver(next)) {
-            const multiplier = Math.pow(6, moves - 1);
+            const multiplier = Math.pow(5, moves - 1);
             for (let i = 0; i < multiplier; i++) {
               futureStates.push(next);
             }
