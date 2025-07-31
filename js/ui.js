@@ -38,6 +38,7 @@ function init() {
     evaluate: game.evaluate.bind(game),
     generateMoves: game.generateMoves,
     isGameOver: game.isGameOver,
+    maxMoves: 5,
   });
   document.querySelectorAll(".row").forEach((row, ri) => {
     Array.from(row.children).forEach((cell, ci) => {
