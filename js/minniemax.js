@@ -6,7 +6,6 @@ class MinnieMax {
     this.generateMoves = config.generateMoves;
     this.getPlayerFromState = config.getPlayerFromState ?? false;
     this.isGameOver = config.isGameOver;
-    this.maxMoves = config.maxMoves;
     const storedDepth = localStorage?.getItem("depth");
     if (storedDepth) {
       const storedDepthParsed = parseInt(storedDepth, 10);
@@ -33,47 +32,62 @@ class MinnieMax {
   getScoredMoves(state, player) {
     const scoredMoves = [];
     this.generateMoves(state, player).forEach((move) => {
-      const futureStates = [];
+      const leafScores = [];
       const stack = [
         {
           state,
-          moves: this.depth,
+          movesRemaining: this.depth,
           player,
           first: true,
         },
       ];
       while (stack.length > 0) {
-        const { state, moves, player, first } = stack.pop();
-        if (moves < 1) {
+        const {
+          state: currState,
+          movesRemaining,
+          player: currPlayer,
+          first,
+        } = stack.pop();
+        if (movesRemaining < 1) {
           continue;
         }
-        const newMoves = first ? [move] : this.generateMoves(state, player);
-        for (const newMove of newMoves) {
-          const next = this.applyMove(state, newMove);
-          if (moves === 1 || this.isGameOver(next)) {
-            const multiplier = Math.pow(this.maxMoves, moves - 1);
-            for (let i = 0; i < multiplier; i++) {
-              futureStates.push(next);
-            }
+        const nextMoves = first
+          ? [move]
+          : this.generateMoves(currState, currPlayer);
+        for (const nextMove of nextMoves) {
+          const nextState = this.applyMove(currState, nextMove);
+          const isTerminal = movesRemaining === 1 || this.isGameOver(nextState);
+          if (isTerminal) {
+            const myScore = this.evaluate(
+              nextState,
+              player,
+              movesRemaining - 1
+            );
+            const oppScore = this.evaluate(
+              nextState,
+              player === 1 ? 2 : 1,
+              movesRemaining - 1
+            );
+            leafScores.push(myScore - oppScore);
           } else {
             const nextPlayer = this.getPlayerFromState
-              ? next.player
-              : player === 1
+              ? nextState.player
+              : currPlayer === 1
               ? 2
               : 1;
             stack.push({
-              state: next,
-              moves: moves - 1,
+              state: nextState,
+              movesRemaining: movesRemaining - 1,
               player: nextPlayer,
+              first: false,
             });
           }
         }
       }
-      const score = futureStates.reduce((sum, state) => {
-        const myScore = this.evaluate(state, player);
-        const opponentScore = this.evaluate(state, player === 1 ? 2 : 1);
-        return sum + myScore - opponentScore;
-      }, 0);
+      const score =
+        leafScores.length > 0
+          ? leafScores.reduce((sum, s) => sum + s, 0) / leafScores.length
+          : 0;
       scoredMoves.push({ move, score });
     });
     return scoredMoves;

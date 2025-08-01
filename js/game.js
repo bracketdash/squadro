@@ -115,7 +115,7 @@ class SquadroGame {
     return next;
   }
 
-  evaluate(state, player) {
+  evaluate(state, player, depthRemaining) {
     const advances = [];
     const isPlayer1 = player === 1;
     const isPlayer2 = player === 2;
@@ -131,10 +131,27 @@ class SquadroGame {
         }
       }
     }
-    return advances
+    let score = advances
       .sort((a, b) => b - a)
       .slice(0, 4)
       .reduce((a, b) => a + b, 0);
+    let completedJourneys = 0;
+    for (let r = 0; r < state.length; r++) {
+      for (let c = 0; c < state[r].length; c++) {
+        const cell = state[r][c];
+        if (
+          (isPlayer1 && cell === "<" && c === 0) ||
+          (isPlayer2 && cell === "^" && r === 0)
+        ) {
+          completedJourneys++;
+        }
+      }
+    }
+    score += completedJourneys * 50;
+    if (completedJourneys > 3) {
+      score += 1000 + depthRemaining;
+    }
+    return score;
   }
 
   generateMoves(state, player) {
