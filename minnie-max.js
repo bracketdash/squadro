@@ -1,28 +1,27 @@
 class MinnieMax {
   constructor(config) {
-    this.el = config.el;
-    this.getMoves = config.getMoves;
-    this.getNextState = config.getNextState;
-    this.getStateScore = config.getStateScore;
-    this.history = [{ state: config.initialState, player: 1 }];
-    this.initialState = config.initialState;
-    this.isGameOver = config.isGameOver;
-    this.localStorageKey = config.localStorageKey;
-    this.movesAhead = config.initialMovesAhead;
-    this.onChange = config.onChange;
-    this.onReady = config.onReady;
-    const storedHistory = localStorage?.getItem(config.localStorageKey);
-    if (storedHistory) {
-      let storedHistoryParsed;
-      try {
-        storedHistoryParsed = JSON.parse(storedHistory);
-      } catch (e) {}
-      if (storedHistoryParsed) {
-        this.history = storedHistoryParsed;
+    const keysToAssign = [
+      "el",
+      "getMoves",
+      "getNextState",
+      "getStateScore",
+      "initialState",
+      "isGameOver",
+      "localStorageKey",
+      "onChange",
+      "onReady",
+    ];
+    keysToAssign.forEach((key) => {
+      if (config[key]) {
+        this[key] = config[key];
       }
-    }
-    this.render();
-    this.setupEventListeners();
+    });
+    this.movesAhead = config.initialMovesAhead;
+    this.history = [{ state: config.initialState, player: 1 }];
+    this._loadStoredHistory();
+    this._addMarkup();
+    this._addStyles();
+    this._addEventListeners();
     if (this.onReady) {
       this.onReady({ minnie: this });
     }
@@ -121,17 +120,18 @@ class MinnieMax {
       return;
     }
     const key = this.localStorageKey;
+    const quotaExceededError = "QuotaExceededError";
     try {
       localStorage.setItem(key, JSON.stringify(this.history));
     } catch (e) {
-      if (e.name === "QuotaExceededError") {
+      if (e.name === quotaExceededError) {
         while (this.history.length > 0) {
           this.history.shift();
           try {
             localStorage.setItem(key, JSON.stringify(this.history));
             break;
           } catch (e2) {
-            if (e2.name !== "QuotaExceededError") {
+            if (e2.name !== quotaExceededError) {
               throw e2;
             }
           }
@@ -142,10 +142,25 @@ class MinnieMax {
     }
   }
 
-  render() {
+  _addEventListeners() {
+    const root = this.el.shadowRoot;
+    const listeners = {
+      down: "decreaseMovesAhead",
+      reset: "newGame",
+      undo: "popState",
+      up: "increaseMovesAhead",
+    };
+    Object.entries(listeners).forEach(([key, fn]) => {
+      root.querySelector(`.${key}`).addEventListener("click", () => {
+        this[`_${fn}`]();
+      });
+    });
+  }
+
+  _addMarkup() {
     this.el.attachShadow({ mode: "open" });
     this.el.shadowRoot.innerHTML = `
-      <div class="thinking-x-moves-ahead">
+      <div class="think-x-moves-ahead">
         <div>Think</div>
         <div class="number">
           <div class="up">&#9650;</div>
@@ -159,8 +174,13 @@ class MinnieMax {
         <div class="reset">New Game</div>
         <div class="undo">Undo Move</div>
       </div>
+    `;
+  }
+
+  _addStyles() {
+    this.el.shadowRoot.innerHTML += `
       <style>
-        .thinking-x-moves-ahead {
+        .think-x-moves-ahead {
           align-items: center;
           display: flex;
           flex-direction: row;
@@ -312,22 +332,6 @@ class MinnieMax {
     `;
   }
 
-  setupEventListeners() {
-    const root = this.el.shadowRoot;
-    root.querySelector(".up").addEventListener("click", () => {
-      this._increaseMovesAhead();
-    });
-    root.querySelector(".down").addEventListener("click", () => {
-      this._decreaseMovesAhead();
-    });
-    root.querySelector(".undo").addEventListener("click", () => {
-      this._popState();
-    });
-    root.querySelector(".reset").addEventListener("click", () => {
-      this._newGame();
-    });
-  }
-
   _decreaseMovesAhead() {
     if (this.movesAhead > 1) {
       this.movesAhead--;
@@ -340,6 +344,19 @@ class MinnieMax {
     this.movesAhead++;
     this.el.shadowRoot.querySelector(".value").innerHTML = this.movesAhead;
     this._onChange();
+  }
+
+  _loadStoredHistory() {
+    const storedHistory = localStorage?.getItem(this.localStorageKey);
+    if (storedHistory) {
+      let storedHistoryParsed;
+      try {
+        storedHistoryParsed = JSON.parse(storedHistory);
+      } catch (e) {}
+      if (storedHistoryParsed) {
+        this.history = storedHistoryParsed;
+      }
+    }
   }
 
   _newGame() {
