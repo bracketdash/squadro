@@ -1,87 +1,45 @@
-// class OldGameClass {
-//   getPiecePlayer(piece) {
-//     return piece === "<" || piece === ">" ? 1 : 2;
-//   }
+const backwardBase = [0, 6, 3, 2];
+const backwardDiv = [0, 3, 2, 1];
+const homewardPipMap = [null, 3, 2, 1];
+const horPips = [3, 1, 2, 1, 3];
+const verPips = [1, 3, 2, 3, 1];
 
-//   isPiece(candidate) {
-//     return ["v", "^", ">", "<"].includes(candidate);
-//   }
+function getFallbackCell(row, col) {
+  if ((row === 0 || row === 6) && col >= 1 && col <= 5) {
+    return "|";
+  }
+  if ((col === 0 || col === 6) && row >= 1 && row <= 5) {
+    return "-";
+  }
+  return "+";
+}
 
-//   _getFallbackCell(row, col) {
-//     if ((row === 0 || row === 6) && col >= 1 && col <= 5) {
-//       return "|";
-//     }
-//     if ((col === 0 || col === 6) && row >= 1 && row <= 5) {
-//       return "-";
-//     }
-//     return "+";
-//   }
+function getPieceProgress(piece, r, c) {
+  let pip;
+  switch (piece) {
+    case "v":
+      return Math.floor(r / verPips[c - 1]);
+    case ">":
+      return Math.floor(c / horPips[r - 1]);
+    case "^":
+      pip = verPips[c - 1];
+      return backwardBase[pip] + Math.floor((6 - r) / backwardDiv[pip]);
+    case "<":
+      pip = horPips[r - 1];
+      return backwardBase[pip] + Math.floor((6 - c) / backwardDiv[pip]);
+    default:
+      return 0;
+  }
+}
 
-//   _getProgress(piece, r, c) {
-//     let pip;
-//     let distance;
-//     if (piece === "v" || piece === "^") {
-//       const index = c - 1;
-//       pip = this.verticalPips[index];
-//       if (piece === "v") {
-//         distance = r;
-//         if (pip === 1) {
-//           return Math.floor(distance / pip);
-//         }
-//         if (pip === 2) {
-//           return Math.floor(distance / pip);
-//         }
-//         if (pip === 3) {
-//           return Math.floor(distance / pip);
-//         }
-//       } else {
-//         distance = 6 - r;
-//         if (pip === 1) {
-//           return 6 + Math.floor(distance / 3);
-//         }
-//         if (pip === 2) {
-//           return 3 + Math.floor(distance / 2);
-//         }
-//         if (pip === 3) {
-//           return 2 + Math.floor(distance / 1);
-//         }
-//       }
-//     }
-//     if (piece === ">" || piece === "<") {
-//       const index = r - 1;
-//       pip = this.horizontalPips[index];
-//       if (piece === ">") {
-//         distance = c;
-//         if (pip === 1) {
-//           return Math.floor(distance / pip);
-//         }
-//         if (pip === 2) {
-//           return Math.floor(distance / pip);
-//         }
-//         if (pip === 3) {
-//           return Math.floor(distance / pip);
-//         }
-//       } else {
-//         distance = 6 - c;
-//         if (pip === 1) {
-//           return 6 + Math.floor(distance / 3);
-//         }
-//         if (pip === 2) {
-//           return 3 + Math.floor(distance / 2);
-//         }
-//         if (pip === 3) {
-//           return 2 + Math.floor(distance / 1);
-//         }
-//       }
-//     }
-//     return 0;
-//   }
-// }
+function isPiece(candidate) {
+  return ["v", "^", ">", "<"].includes(candidate);
+}
 
 new MinnieMax({
   el: document.querySelector(".minniemax"),
   localStorageKey: "squadrohelper",
-  initialMovesAhead: 7,
+  initialMovesAhead: 8,
   initialState: [
     [" ", "v", "v", "v", "v", "v", " "],
     [">", "+", "+", "+", "+", "+", "-"],
@@ -91,8 +49,7 @@ new MinnieMax({
     [">", "+", "+", "+", "+", "+", "-"],
     [" ", "|", "|", "|", "|", "|", " "],
   ],
-  getMoves: ({ minnie, state, player }) => {
-    // TODO: adapt to MinnieMax 2
+  getMoves: ({ state, player }) => {
     const moves = [];
     const isPlayer1 = player === 1;
     const isPlayer2 = player === 2;
@@ -110,23 +67,19 @@ new MinnieMax({
     }
     return moves;
   },
-  getNextState: ({ minnie, state, player, move }) => {
-    // TODO: adapt to MinnieMax 2
-    // (state, { ri, ci }) {
-    // this.horizontalPips = [3, 1, 2, 1, 3];
-    // this.verticalPips = [1, 3, 2, 3, 1];
+  getNextState: ({ state, player, move }) => {
+    const { ri, ci } = move;
     const next = Array(7);
     for (let i = 0; i < 7; i++) {
       next[i] = state[i].slice();
     }
     const piece = state[ri][ci];
-    if (!this.isPiece(piece)) {
+    if (!isPiece(piece)) {
       return next;
     }
     if ((piece === "^" && ri === 0) || (piece === "<" && ci === 0)) {
       return state;
     }
-    const homewardPipMap = [null, 3, 2, 1];
     const isVertical = piece === "v" || piece === "^";
     const index = isVertical ? ci - 1 : ri - 1;
     let dr = 0;
@@ -135,22 +88,22 @@ new MinnieMax({
     switch (piece) {
       case "v":
         dr = 1;
-        speed = this.verticalPips[index];
+        speed = verPips[index];
         break;
       case "^":
         dr = -1;
-        speed = homewardPipMap[this.verticalPips[index]];
+        speed = homewardPipMap[verPips[index]];
         break;
       case ">":
         dc = 1;
-        speed = this.horizontalPips[index];
+        speed = horPips[index];
         break;
       case "<":
         dc = -1;
-        speed = homewardPipMap[this.horizontalPips[index]];
+        speed = homewardPipMap[horPips[index]];
         break;
     }
-    next[ri][ci] = this._getFallbackCell(ri, ci);
+    next[ri][ci] = getFallbackCell(ri, ci);
     const jumped = [];
     let r = ri;
     let c = ci;
@@ -163,7 +116,7 @@ new MinnieMax({
         break;
       }
       const target = next[nr][nc];
-      if (this.isPiece(target)) {
+      if (isPiece(target)) {
         jumped.push({ r: nr, c: nc, p: target });
         r = nr;
         c = nc;
@@ -190,19 +143,18 @@ new MinnieMax({
       next[r][c] = "<";
     }
     for (const { r: jr, c: jc, p } of jumped) {
-      next[jr][jc] = this._getFallbackCell(jr, jc);
+      next[jr][jc] = getFallbackCell(jr, jc);
       const homeRow = p === "v" ? 0 : p === "^" ? 6 : jr;
       const homeCol = p === ">" ? 0 : p === "<" ? 6 : jc;
       next[homeRow][homeCol] = p;
     }
-    return next;
+    return { state: next, player: player === 1 ? 2 : 1 };
   },
-  getStateScore: ({ minnie, state, player }) => {
-    // TODO: adapt to MinnieMax 2
-    // (state, player, depthRemaining) {
+  getStateScore: ({ state, player, movesRemaining }) => {
     const advances = [];
     const isPlayer1 = player === 1;
     const isPlayer2 = player === 2;
+    let completedJourneys = 0;
     for (let ri = 0; ri < state.length; ri++) {
       const row = state[ri];
       for (let ci = 0; ci < row.length; ci++) {
@@ -211,34 +163,27 @@ new MinnieMax({
           (isPlayer1 && (cell === ">" || cell === "<")) ||
           (isPlayer2 && (cell === "v" || cell === "^"))
         ) {
-          advances.push(this._getProgress(cell, ri, ci));
+          const pieceProgress = getPieceProgress(cell, ri, ci);
+          if (
+            (((ri === 0 && ci === 3) || (ri === 3 && ci === 0)) &&
+              pieceProgress > 5) ||
+            ((ri === 0 || ci === 0) && pieceProgress > 7)
+          ) {
+            advances.push(50);
+            completedJourneys++;
+          } else {
+            advances.push(pieceProgress);
+          }
         }
       }
     }
-    let score = advances
+    const score = advances
       .sort((a, b) => b - a)
       .slice(0, 4)
       .reduce((a, b) => a + b, 0);
-    let completedJourneys = 0;
-    for (let r = 0; r < state.length; r++) {
-      for (let c = 0; c < state[r].length; c++) {
-        const cell = state[r][c];
-        if (
-          (isPlayer1 && cell === "<" && c === 0) ||
-          (isPlayer2 && cell === "^" && r === 0)
-        ) {
-          completedJourneys++;
-        }
-      }
-    }
-    score += completedJourneys * 50;
-    if (completedJourneys > 3) {
-      score += 1000 + depthRemaining;
-    }
-    return score;
+    return completedJourneys > 3 ? score + 1000 + movesRemaining : score;
   },
-  isGameOver: ({ minnie, state }) => {
-    // TODO: adapt to MinnieMax 2
+  isGameOver: ({ state }) => {
     const playerScores = [0, 0];
     for (let r = 0; r < state.length; r++) {
       for (let c = 0; c < state[r].length; c++) {
@@ -254,8 +199,8 @@ new MinnieMax({
     return playerScores[0] >= 4 || playerScores[1] >= 4;
   },
   onChange: ({ minnie }) => {
-    // TODO: adapt to MinnieMax 2
-    game.getState().forEach((row, r) => {
+    const { state, player } = minnie.getState();
+    state.forEach((row, r) => {
       const domCells = Array.from(
         Array.from(document.querySelectorAll(".row"))[r].children
       );
@@ -290,29 +235,31 @@ new MinnieMax({
     document
       .querySelectorAll(".suggested")
       .forEach((el) => el.classList.remove("suggested"));
-    const rows = Array.from(document.querySelectorAll(".row"));
-    const state = game.getState();
-    [1, 2].forEach((player) => {
-      const { ri, ci } = minnie
-        .getScoredMoves(state, player)
-        .sort((a, b) => (a.score <= b.score ? 1 : -1))[0].move;
-      rows[ri].children[ci].classList.add("suggested");
+    minnie.getScoredMoves(state, player).then((scoredMoves) => {
+      const { ri, ci } = scoredMoves[0].move;
+      document
+        .querySelectorAll(".row")
+        [ri].children[ci].classList.add("suggested");
     });
   },
   onReady: ({ minnie }) => {
-    // TODO: adapt to MinnieMax 2
     document.querySelectorAll(".row").forEach((row, ri) => {
       Array.from(row.children).forEach((cell, ci) => {
         cell.addEventListener("click", () => {
-          const state = game.getState();
-          if (!game.isPiece(state[ri][ci]) || game.isGameOver(state)) {
+          const { state, player } = minnie.getState();
+          if (!isPiece(state[ri][ci]) || minnie.isGameOver({ state })) {
             return;
           }
-          game.pushState(game.applyMove(state, { ri, ci }));
-          onChange(minnie, game);
+          const { state: nextState, player: nextPlayer } = minnie.getNextState({
+            state,
+            player,
+            move: { ri, ci },
+          });
+          minnie.pushState(nextState, nextPlayer);
+          minnie.onChange({ minnie });
         });
       });
     });
-    onChange(minnie, game);
+    minnie.onChange({ minnie });
   },
 });
